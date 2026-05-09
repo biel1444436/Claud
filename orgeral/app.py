@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify, render_template, g, session, redirect
 from authlib.integrations.flask_client import OAuth
 from groq import Groq
 
-# ── Secret key (persists across restarts) ────────────────────────────────────
+# ── Secret key ────────────────────────────────────────────────────────────────
 _SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), ".secret_key")
 
 def _load_secret_key():
@@ -28,6 +28,10 @@ app.secret_key = _load_secret_key()
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "orgeral.db")
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+IS_POSTGRES = bool(DATABASE_URL)
 
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 oauth = OAuth(app)
@@ -52,11 +56,21 @@ SUBJECT_COLORS = {
     "Outros": "#555555",
 }
 
+# ── Database helpers ──────────────────────────────────────────────────────────
+
+def _open_connection():
+    if IS_POSTGRES:
+        import psycopg2
+        import psycopg2.extras
+        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
+        g.db = _open_connection()
     return g.db
 
 
@@ -67,45 +81,92 @@ def close_db(exc):
         db.close()
 
 
+def _q(sql):
+    return sql.replace("?", "%s") if IS_POSTGRES else sql
+
+
+def db_exec(sql, params=()):
+    cur = get_db().cursor()
+    cur.execute(_q(sql), params)
+    return cur
+
+
+def db_insert(sql, params=()):
+    cur = get_db().cursor()
+    if IS_POSTGRES:
+        cur.execute(_q(sql) + " RETURNING id", params)
+        return cur.fetchone()["id"]
+    cur.execute(sql, params)
+    return cur.lastrowid
+
+
+def db_commit():
+    get_db().commit()
+
+
+def db_one(sql, params=()):
+    return db_exec(sql, params).fetchone()
+
+
+def db_all(sql, params=()):
+    return db_exec(sql, params).fetchall()
+
+
 def init_db():
-    db = sqlite3.connect(DB_PATH)
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            google_id TEXT UNIQUE NOT NULL,
-            email TEXT,
-            name TEXT,
-            picture TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL DEFAULT 1,
-            title TEXT NOT NULL,
-            description TEXT,
-            date TEXT NOT NULL,
-            time TEXT,
-            color TEXT DEFAULT '#555555',
-            subject TEXT DEFAULT '',
-            task_type TEXT DEFAULT '',
-            completed INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    for col in (
-        "subject TEXT DEFAULT ''",
-        "task_type TEXT DEFAULT ''",
-        "completed INTEGER DEFAULT 0",
-        "user_id INTEGER NOT NULL DEFAULT 1",
-    ):
-        try:
-            db.execute(f"ALTER TABLE tasks ADD COLUMN {col}")
-        except Exception:
-            pass
-    db.commit()
-    db.close()
+    conn = _open_connection()
+    cur = conn.cursor()
+    if IS_POSTGRES:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                google_id TEXT UNIQUE NOT NULL,
+                email TEXT, name TEXT, picture TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL DEFAULT 1,
+                title TEXT NOT NULL, description TEXT,
+                date TEXT NOT NULL, time TEXT,
+                color TEXT DEFAULT '#555555',
+                subject TEXT DEFAULT '',
+                task_type TEXT DEFAULT '',
+                completed INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+    else:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                google_id TEXT UNIQUE NOT NULL,
+                email TEXT, name TEXT, picture TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL DEFAULT 1,
+                title TEXT NOT NULL, description TEXT,
+                date TEXT NOT NULL, time TEXT,
+                color TEXT DEFAULT '#555555',
+                subject TEXT DEFAULT '',
+                task_type TEXT DEFAULT '',
+                completed INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        for col in ("subject TEXT DEFAULT ''", "task_type TEXT DEFAULT ''",
+                    "completed INTEGER DEFAULT 0", "user_id INTEGER NOT NULL DEFAULT 1"):
+            try:
+                cur.execute(f"ALTER TABLE tasks ADD COLUMN {col}")
+            except Exception:
+                pass
+    conn.commit()
+    conn.close()
 
 
 def login_required(f):
@@ -130,7 +191,7 @@ def login_page():
     if "user_id" in session:
         return redirect(url_for("index"))
     if not os.environ.get("GOOGLE_CLIENT_ID"):
-        return "<h2 style='font-family:sans-serif;color:#e07070;padding:40px'>Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas variáveis de ambiente.</h2>", 500
+        return "<h2 style='font-family:sans-serif;color:#e07070;padding:40px'>Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET.</h2>", 500
     return render_template("login.html")
 
 
@@ -145,36 +206,30 @@ def callback():
     try:
         token = google.authorize_access_token()
         user_info = token.get("userinfo")
-
         google_id = user_info["sub"]
         email     = user_info.get("email", "")
         name      = user_info.get("name", email)
         picture   = user_info.get("picture", "")
 
-        db = get_db()
-        user = db.execute("SELECT * FROM users WHERE google_id=?", (google_id,)).fetchone()
-
+        user = db_one("SELECT * FROM users WHERE google_id=?", (google_id,))
         if user:
-            db.execute(
-                "UPDATE users SET email=?, name=?, picture=? WHERE google_id=?",
-                (email, name, picture, google_id),
-            )
-            db.commit()
-            user = db.execute("SELECT * FROM users WHERE google_id=?", (google_id,)).fetchone()
+            db_exec("UPDATE users SET email=?, name=?, picture=? WHERE google_id=?",
+                    (email, name, picture, google_id))
+            db_commit()
+            user = db_one("SELECT * FROM users WHERE google_id=?", (google_id,))
         else:
-            cursor = db.execute(
+            new_id = db_insert(
                 "INSERT INTO users (google_id, email, name, picture) VALUES (?, ?, ?, ?)",
                 (google_id, email, name, picture),
             )
-            db.commit()
-            user = db.execute("SELECT * FROM users WHERE id=?", (cursor.lastrowid,)).fetchone()
+            db_commit()
+            user = db_one("SELECT * FROM users WHERE id=?", (new_id,))
 
         session["user_id"]  = user["id"]
         session["username"] = name
         session["picture"]  = picture
         return redirect(url_for("index"))
-
-    except Exception as e:
+    except Exception:
         return redirect(url_for("login_page"))
 
 
@@ -189,21 +244,16 @@ def api_logout():
 @app.route("/")
 @login_required
 def index():
-    return render_template(
-        "index.html",
-        username=session.get("username"),
-        picture=session.get("picture", ""),
-    )
+    return render_template("index.html",
+                           username=session.get("username"),
+                           picture=session.get("picture", ""))
 
 
 @app.route("/api/tasks", methods=["GET"])
 @login_required
 def get_tasks():
-    db = get_db()
-    tasks = db.execute(
-        "SELECT * FROM tasks WHERE user_id=? ORDER BY date, time",
-        (current_user_id(),)
-    ).fetchall()
+    tasks = db_all("SELECT * FROM tasks WHERE user_id=? ORDER BY date, time",
+                   (current_user_id(),))
     return jsonify([dict(t) for t in tasks])
 
 
@@ -213,18 +263,15 @@ def create_task():
     data = request.json
     if not data or not data.get("title") or not data.get("date"):
         return jsonify({"error": "title e date são obrigatórios"}), 400
-
     subject = data.get("subject", "Outros")
     color   = SUBJECT_COLORS.get(subject, data.get("color", "#555555"))
-
-    db = get_db()
-    cursor = db.execute(
+    new_id = db_insert(
         "INSERT INTO tasks (user_id, title, description, date, time, color, subject, task_type, completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
         (current_user_id(), data["title"], data.get("description", ""), data["date"],
          data.get("time"), color, subject, data.get("task_type", "")),
     )
-    db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id=?", (cursor.lastrowid,)).fetchone()
+    db_commit()
+    task = db_one("SELECT * FROM tasks WHERE id=?", (new_id,))
     return jsonify(dict(task)), 201
 
 
@@ -236,19 +283,16 @@ def bulk_action():
     ids    = data.get("ids", [])
     if not ids:
         return jsonify({"error": "Nenhuma tarefa selecionada"}), 400
-
-    uid = current_user_id()
-    db  = get_db()
-    ph  = ",".join("?" * len(ids))
+    uid    = current_user_id()
+    ph     = ",".join(["?"] * len(ids))
     params = ids + [uid]
-
     if action == "delete":
-        db.execute(f"DELETE FROM tasks WHERE id IN ({ph}) AND user_id=?", params)
+        db_exec(f"DELETE FROM tasks WHERE id IN ({ph}) AND user_id=?", params)
     elif action == "complete":
-        db.execute(f"UPDATE tasks SET completed=1 WHERE id IN ({ph}) AND user_id=?", params)
+        db_exec(f"UPDATE tasks SET completed=1 WHERE id IN ({ph}) AND user_id=?", params)
     elif action == "uncomplete":
-        db.execute(f"UPDATE tasks SET completed=0 WHERE id IN ({ph}) AND user_id=?", params)
-    db.commit()
+        db_exec(f"UPDATE tasks SET completed=0 WHERE id IN ({ph}) AND user_id=?", params)
+    db_commit()
     return jsonify({"ok": True})
 
 
@@ -256,51 +300,44 @@ def bulk_action():
 @login_required
 def update_task(task_id):
     data = request.json
-    db   = get_db()
-    existing = db.execute(
-        "SELECT * FROM tasks WHERE id=? AND user_id=?", (task_id, current_user_id())
-    ).fetchone()
+    existing = db_one("SELECT * FROM tasks WHERE id=? AND user_id=?",
+                      (task_id, current_user_id()))
     if not existing:
         return jsonify({"error": "Tarefa não encontrada"}), 404
-
     subject = data.get("subject", existing["subject"] or "Outros")
     color   = SUBJECT_COLORS.get(subject, existing["color"])
-
-    db.execute(
+    db_exec(
         "UPDATE tasks SET title=?, description=?, date=?, time=?, color=?, subject=?, task_type=? WHERE id=? AND user_id=?",
         (data.get("title", existing["title"]), data.get("description", existing["description"]),
          data.get("date", existing["date"]), data.get("time", existing["time"]),
          color, subject, data.get("task_type", existing["task_type"] or ""),
          task_id, current_user_id()),
     )
-    db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+    db_commit()
+    task = db_one("SELECT * FROM tasks WHERE id=?", (task_id,))
     return jsonify(dict(task))
 
 
 @app.route("/api/tasks/<int:task_id>/complete", methods=["PATCH"])
 @login_required
 def toggle_complete(task_id):
-    db = get_db()
-    existing = db.execute(
-        "SELECT * FROM tasks WHERE id=? AND user_id=?", (task_id, current_user_id())
-    ).fetchone()
+    existing = db_one("SELECT * FROM tasks WHERE id=? AND user_id=?",
+                      (task_id, current_user_id()))
     if not existing:
         return jsonify({"error": "Tarefa não encontrada"}), 404
     new_status = 0 if existing["completed"] else 1
-    db.execute("UPDATE tasks SET completed=? WHERE id=? AND user_id=?",
-               (new_status, task_id, current_user_id()))
-    db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+    db_exec("UPDATE tasks SET completed=? WHERE id=? AND user_id=?",
+            (new_status, task_id, current_user_id()))
+    db_commit()
+    task = db_one("SELECT * FROM tasks WHERE id=?", (task_id,))
     return jsonify(dict(task))
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 @login_required
 def delete_task(task_id):
-    db = get_db()
-    db.execute("DELETE FROM tasks WHERE id=? AND user_id=?", (task_id, current_user_id()))
-    db.commit()
+    db_exec("DELETE FROM tasks WHERE id=? AND user_id=?", (task_id, current_user_id()))
+    db_commit()
     return jsonify({"ok": True})
 
 
@@ -312,37 +349,32 @@ def upload_file():
     file = request.files["file"]
     if not file.filename:
         return jsonify({"error": "Arquivo inválido"}), 400
-
     allowed = {".txt", ".pdf", ".docx", ".md"}
     ext = os.path.splitext(file.filename.lower())[1]
     if ext not in allowed:
         return jsonify({"error": f"Tipo não suportado. Use: {', '.join(allowed)}"}), 400
-
     text = extract_text_from_file(file)
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
     if not os.environ.get("GROQ_API_KEY"):
         return jsonify({"error": "GROQ_API_KEY não configurada."}), 500
-
     try:
         tasks = parse_tasks_with_groq(text)
     except Exception as e:
         return jsonify({"error": f"Erro ao processar com IA: {str(e)}"}), 500
-
-    db = get_db()
     created = []
     for t in tasks:
         try:
-            cursor = db.execute(
+            new_id = db_insert(
                 "INSERT INTO tasks (user_id, title, description, date, time, color, subject, task_type, completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
                 (current_user_id(), t["title"], t.get("description", ""), t["date"],
                  t.get("time"), t.get("color", "#555555"), t.get("subject", "Outros"), t.get("task_type", "")),
             )
-            task = db.execute("SELECT * FROM tasks WHERE id=?", (cursor.lastrowid,)).fetchone()
+            task = db_one("SELECT * FROM tasks WHERE id=?", (new_id,))
             created.append(dict(task))
         except Exception:
             continue
-    db.commit()
+    db_commit()
     return jsonify({"created": len(created), "tasks": created})
 
 
@@ -351,10 +383,8 @@ def upload_file():
 def extract_text_from_file(file) -> str:
     filename = file.filename.lower()
     content  = file.read()
-
     if filename.endswith(".txt") or filename.endswith(".md"):
         return content.decode("utf-8", errors="ignore")
-
     if filename.endswith(".pdf"):
         try:
             import fitz
@@ -366,7 +396,6 @@ def extract_text_from_file(file) -> str:
             return text
         except Exception as e:
             return f"[Erro ao ler PDF: {e}]"
-
     if filename.endswith(".docx"):
         try:
             from docx import Document
@@ -375,14 +404,12 @@ def extract_text_from_file(file) -> str:
             return "\n".join(p.text for p in doc.paragraphs)
         except Exception as e:
             return f"[Erro ao ler DOCX: {e}]"
-
     return content.decode("utf-8", errors="ignore")
 
 
 def parse_tasks_with_groq(text: str) -> list[dict]:
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     today  = datetime.now().strftime("%Y-%m-%d")
-
     chunk_size, overlap = 12000, 500
     chunks, start = [], 0
     while start < len(text):
@@ -390,9 +417,7 @@ def parse_tasks_with_groq(text: str) -> list[dict]:
         chunks.append(text[start:end])
         if end >= len(text): break
         start = end - overlap
-
     all_tasks, seen = [], set()
-
     for chunk in chunks:
         prompt = f"""Analise o seguinte trecho de documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
 
@@ -417,7 +442,6 @@ Ano padrão: {datetime.now().year}. Se não houver tarefas válidas, retorne lis
 
 TRECHO:
 {chunk}"""
-
         try:
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -437,10 +461,11 @@ TRECHO:
                     seen.add(key); all_tasks.append(t)
         except Exception:
             continue
-
     return all_tasks
 
 
+# Initialize DB on startup (works with gunicorn and direct python)
+init_db()
+
 if __name__ == "__main__":
-    init_db()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host="0.0.0.0")
