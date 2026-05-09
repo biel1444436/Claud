@@ -1,0 +1,4 @@
+orgeral/orgeral.db
+__pycache__/
+*.pyc
+.env

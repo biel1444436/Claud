@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orgeral</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <span class="logo-icon">◈</span>
+    <span class="logo-text">Orgeral</span>
+  </div>
+
+  <!-- Upload -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Importar Sistemática</h3>
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.md" hidden />
+      <div class="upload-icon">⬆</div>
+      <p class="upload-label">Arraste ou clique para enviar</p>
+      <p class="upload-sub">PDF, DOCX, TXT ou MD</p>
+    </div>
+    <div id="uploadStatus" class="upload-status hidden"></div>
+  </section>
+
+  <!-- Add task -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Nova Tarefa</h3>
+    <form id="taskForm">
+      <input type="text" id="taskTitle" placeholder="Título da tarefa" class="input" required />
+      <textarea id="taskDesc" placeholder="Descrição (opcional)" class="input textarea" rows="2"></textarea>
+      <input type="date" id="taskDate" class="input" required />
+      <input type="time" id="taskTime" class="input" />
+      <div class="color-row">
+        <label>Tipo:</label>
+        <label class="color-opt"><input type="radio" name="color" value="#555555" checked /> Tarefa</label>
+        <label class="color-opt"><input type="radio" name="color" value="#222222" /> Prova</label>
+        <label class="color-opt"><input type="radio" name="color" value="#888888" /> Entrega</label>
+      </div>
+      <button type="submit" class="btn btn-primary">Adicionar</button>
+    </form>
+  </section>
+
+  <!-- Upcoming -->
+  <section class="sidebar-section">
+    <h3 class="section-title">Próximas Tarefas</h3>
+    <ul id="upcomingList" class="upcoming-list"></ul>
+  </section>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <header class="topbar">
+    <h1 class="topbar-title">Calendário</h1>
+    <div class="topbar-actions">
+      <span id="taskCount" class="task-count"></span>
+    </div>
+  </header>
+  <div id="calendar"></div>
+</main>
+
+<!-- MODAL -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">Editar Tarefa</h2>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <form id="editForm">
+      <input type="hidden" id="editId" />
+      <input type="text" id="editTitle" placeholder="Título" class="input" required />
+      <textarea id="editDesc" placeholder="Descrição" class="input textarea" rows="3"></textarea>
+      <input type="date" id="editDate" class="input" required />
+      <input type="time" id="editTime" class="input" />
+      <div class="color-row">
+        <label>Tipo:</label>
+        <label class="color-opt"><input type="radio" name="editColor" value="#555555" /> Tarefa</label>
+        <label class="color-opt"><input type="radio" name="editColor" value="#222222" /> Prova</label>
+        <label class="color-opt"><input type="radio" name="editColor" value="#888888" /> Entrega</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="deleteBtn" class="btn btn-danger">Excluir</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader" class="loader-overlay hidden">
+  <div class="loader-box">
+    <div class="spinner"></div>
+    <p>Analisando com IA…</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
