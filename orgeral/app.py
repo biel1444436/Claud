@@ -100,7 +100,23 @@ def parse_tasks_with_groq(text: str) -> list[dict]:
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     today = datetime.now().strftime("%Y-%m-%d")
 
-    prompt = f"""Analise o seguinte documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
+    # Split into chunks of ~12000 chars with 500 char overlap
+    chunk_size = 12000
+    overlap = 500
+    chunks = []
+    start = 0
+    while start < len(text):
+        end = start + chunk_size
+        chunks.append(text[start:end])
+        if end >= len(text):
+            break
+        start = end - overlap
+
+    all_tasks = []
+    seen = set()
+
+    for chunk in chunks:
+        prompt = f"""Analise o seguinte trecho de documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
 
 Data de hoje: {today}
 
@@ -127,35 +143,42 @@ Para cada atividade encontrada, retorne um JSON com este formato exato:
 Regras:
 - Se não houver ano especificado, use {datetime.now().year}.
 - NÃO inclua Recuperação nem nenhuma atividade de reforço/recuperação.
-- A description DEVE ter os dois campos (Objetivo do conhecimento e Onde encontrar) separados por quebra de linha.
-- Se alguma informação não estiver no documento, escreva "Não informado" no campo.
+- A description DEVE ter os dois campos separados por quebra de linha.
+- Se alguma informação não estiver no documento, escreva "Não informado".
+- Se não houver nenhuma atividade válida neste trecho, retorne tasks como lista vazia.
 - Responda APENAS com o JSON, sem texto adicional.
 
-DOCUMENTO:
-{text[:8000]}"""
+TRECHO DO DOCUMENTO:
+{chunk}"""
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-    )
+        try:
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+            )
 
-    raw = response.choices[0].message.content.strip()
+            raw = response.choices[0].message.content.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            raw = raw.strip()
 
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
+            data = json.loads(raw)
+            chunk_tasks = data.get("tasks", [])
 
-    data = json.loads(raw)
-    tasks = data.get("tasks", [])
+            for t in chunk_tasks:
+                subject = t.get("subject", "Outros")
+                t["color"] = SUBJECT_COLORS.get(subject, "#555555")
+                key = (t.get("title", "").strip().lower(), t.get("date", ""), subject)
+                if key not in seen:
+                    seen.add(key)
+                    all_tasks.append(t)
+        except Exception:
+            continue
 
-    for t in tasks:
-        subject = t.get("subject", "Outros")
-        t["color"] = SUBJECT_COLORS.get(subject, "#555555")
-
-    return tasks
+    return all_tasks
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
