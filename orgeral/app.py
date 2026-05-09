@@ -51,10 +51,11 @@ def init_db():
             color TEXT DEFAULT '#555555',
             subject TEXT DEFAULT '',
             task_type TEXT DEFAULT '',
+            completed INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    for col in ("subject TEXT DEFAULT ''", "task_type TEXT DEFAULT ''"):
+    for col in ("subject TEXT DEFAULT ''", "task_type TEXT DEFAULT ''", "completed INTEGER DEFAULT 0"):
         try:
             db.execute(f"ALTER TABLE tasks ADD COLUMN {col}")
         except Exception:
@@ -100,7 +101,6 @@ def parse_tasks_with_groq(text: str) -> list[dict]:
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Split into chunks of ~12000 chars with 500 char overlap
     chunk_size = 12000
     overlap = 500
     chunks = []
@@ -206,7 +206,7 @@ def create_task():
 
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO tasks (title, description, date, time, color, subject, task_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO tasks (title, description, date, time, color, subject, task_type, completed) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
         (
             data["title"],
             data.get("description", ""),
@@ -220,6 +220,26 @@ def create_task():
     db.commit()
     task = db.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)).fetchone()
     return jsonify(dict(task)), 201
+
+
+@app.route("/api/tasks/bulk", methods=["POST"])
+def bulk_action():
+    data = request.json
+    action = data.get("action")
+    ids = data.get("ids", [])
+    if not ids:
+        return jsonify({"error": "Nenhuma tarefa selecionada"}), 400
+
+    db = get_db()
+    placeholders = ",".join("?" * len(ids))
+    if action == "delete":
+        db.execute(f"DELETE FROM tasks WHERE id IN ({placeholders})", ids)
+    elif action == "complete":
+        db.execute(f"UPDATE tasks SET completed=1 WHERE id IN ({placeholders})", ids)
+    elif action == "uncomplete":
+        db.execute(f"UPDATE tasks SET completed=0 WHERE id IN ({placeholders})", ids)
+    db.commit()
+    return jsonify({"ok": True})
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
@@ -246,6 +266,19 @@ def update_task(task_id):
             task_id,
         ),
     )
+    db.commit()
+    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    return jsonify(dict(task))
+
+
+@app.route("/api/tasks/<int:task_id>/complete", methods=["PATCH"])
+def toggle_complete(task_id):
+    db = get_db()
+    existing = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    if not existing:
+        return jsonify({"error": "Tarefa não encontrada"}), 404
+    new_status = 0 if existing["completed"] else 1
+    db.execute("UPDATE tasks SET completed=? WHERE id=?", (new_status, task_id))
     db.commit()
     task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
     return jsonify(dict(task))
@@ -290,7 +323,7 @@ def upload_file():
     for t in tasks:
         try:
             cursor = db.execute(
-                "INSERT INTO tasks (title, description, date, time, color, subject, task_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO tasks (title, description, date, time, color, subject, task_type, completed) VALUES (?, ?, ?, ?, ?, ?, ?, 0)",
                 (
                     t["title"],
                     t.get("description", ""),

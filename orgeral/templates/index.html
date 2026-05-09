@@ -16,6 +16,12 @@
     <span class="logo-text">Orgeral</span>
   </div>
 
+  <!-- View toggle -->
+  <div class="view-toggle">
+    <button id="btnViewCalendar" class="view-btn active">📅 Calendário</button>
+    <button id="btnViewList" class="view-btn">☑ Lista</button>
+  </div>
+
   <!-- Upload -->
   <section class="sidebar-section">
     <h3 class="section-title">Importar Sistemática</h3>
@@ -69,8 +75,8 @@
     </form>
   </section>
 
-  <!-- Upcoming -->
-  <section class="sidebar-section">
+  <!-- Upcoming (only in calendar view) -->
+  <section class="sidebar-section" id="upcomingSection">
     <h3 class="section-title">Próximas Tarefas</h3>
     <ul id="upcomingList" class="upcoming-list"></ul>
   </section>
@@ -79,13 +85,42 @@
 <!-- MAIN -->
 <main class="main">
   <header class="topbar">
-    <h1 class="topbar-title">Calendário</h1>
+    <h1 class="topbar-title" id="viewTitle">Calendário</h1>
     <div class="topbar-actions">
       <span id="taskCount" class="task-count"></span>
+      <!-- List view controls -->
+      <div id="listControls" class="list-controls hidden">
+        <select id="listFilter" class="input-sm">
+          <option value="all">Todas</option>
+          <option value="pending">Pendentes</option>
+          <option value="completed">Concluídas</option>
+        </select>
+        <label class="select-all-wrap">
+          <input type="checkbox" id="selectAll" /> Selecionar tudo
+        </label>
+      </div>
     </div>
   </header>
-  <div id="calendar"></div>
+
+  <!-- Calendar -->
+  <div id="calendarView">
+    <div id="calendar"></div>
+  </div>
+
+  <!-- List view -->
+  <div id="listView" class="hidden">
+    <div id="taskList" class="task-list"></div>
+  </div>
 </main>
+
+<!-- BULK ACTION BAR -->
+<div id="bulkBar" class="bulk-bar hidden">
+  <span id="bulkCount">0 selecionadas</span>
+  <div class="bulk-actions">
+    <button id="bulkComplete" class="btn-bulk btn-bulk-complete">✓ Concluir</button>
+    <button id="bulkDelete" class="btn-bulk btn-bulk-delete">✕ Excluir</button>
+  </div>
+</div>
 
 <!-- MODAL -->
 <div id="modal" class="modal-overlay hidden">
@@ -131,6 +166,7 @@
 
       <div class="modal-actions">
         <button type="button" id="deleteBtn" class="btn btn-danger">Excluir</button>
+        <button type="button" id="completeBtn" class="btn btn-complete">✓ Concluir</button>
         <button type="submit" class="btn btn-primary">Salvar</button>
       </div>
     </form>
