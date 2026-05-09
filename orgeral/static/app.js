@@ -42,7 +42,6 @@ async function loadTasks() {
 }
 
 function renderAll() {
-  // Calendar events
   calendar.removeAllEvents();
   tasks.forEach((t) => {
     calendar.addEvent({
@@ -56,11 +55,9 @@ function renderAll() {
     });
   });
 
-  // Task count
   document.getElementById("taskCount").textContent =
     tasks.length === 1 ? "1 tarefa" : `${tasks.length} tarefas`;
 
-  // Upcoming list (next 5 from today)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const upcoming = tasks

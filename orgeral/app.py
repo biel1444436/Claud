@@ -112,7 +112,6 @@ DOCUMENTO:
     )
 
     raw = response.content[0].text.strip()
-    # Remove markdown code blocks if present
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
