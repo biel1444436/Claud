@@ -36,12 +36,35 @@
       <textarea id="taskDesc" placeholder="Descrição (opcional)" class="input textarea" rows="2"></textarea>
       <input type="date" id="taskDate" class="input" required />
       <input type="time" id="taskTime" class="input" />
-      <div class="color-row">
-        <label>Tipo:</label>
-        <label class="color-opt"><input type="radio" name="color" value="#555555" checked /> Tarefa</label>
-        <label class="color-opt"><input type="radio" name="color" value="#222222" /> Prova</label>
-        <label class="color-opt"><input type="radio" name="color" value="#888888" /> Entrega</label>
+
+      <select id="taskSubject" class="input">
+        <option value="Outros">Matéria</option>
+        <option value="Português">Português</option>
+        <option value="Matemática">Matemática</option>
+        <option value="Ciências">Ciências</option>
+        <option value="História">História</option>
+        <option value="Geografia">Geografia</option>
+        <option value="Inglês">Inglês</option>
+        <option value="Artes">Artes</option>
+        <option value="Ed. Física">Ed. Física</option>
+        <option value="Religião">Religião</option>
+        <option value="Outros">Outros</option>
+      </select>
+
+      <select id="taskType" class="input">
+        <option value="">Tipo de atividade</option>
+        <option value="Tarefa Diária">Tarefa Diária</option>
+        <option value="Trabalho Bimestral">Trabalho Bimestral</option>
+        <option value="Simulado">Simulado</option>
+        <option value="Avaliação">Avaliação</option>
+      </select>
+
+      <div class="color-preview-row">
+        <span class="color-preview-label">Cor:</span>
+        <span id="taskColorDot" class="color-dot" style="background:#555555"></span>
+        <span id="taskColorName" class="color-name">Outros</span>
       </div>
+
       <button type="submit" class="btn btn-primary">Adicionar</button>
     </form>
   </section>
@@ -77,12 +100,35 @@
       <textarea id="editDesc" placeholder="Descrição" class="input textarea" rows="3"></textarea>
       <input type="date" id="editDate" class="input" required />
       <input type="time" id="editTime" class="input" />
-      <div class="color-row">
-        <label>Tipo:</label>
-        <label class="color-opt"><input type="radio" name="editColor" value="#555555" /> Tarefa</label>
-        <label class="color-opt"><input type="radio" name="editColor" value="#222222" /> Prova</label>
-        <label class="color-opt"><input type="radio" name="editColor" value="#888888" /> Entrega</label>
+
+      <select id="editSubject" class="input">
+        <option value="Outros">Matéria</option>
+        <option value="Português">Português</option>
+        <option value="Matemática">Matemática</option>
+        <option value="Ciências">Ciências</option>
+        <option value="História">História</option>
+        <option value="Geografia">Geografia</option>
+        <option value="Inglês">Inglês</option>
+        <option value="Artes">Artes</option>
+        <option value="Ed. Física">Ed. Física</option>
+        <option value="Religião">Religião</option>
+        <option value="Outros">Outros</option>
+      </select>
+
+      <select id="editType" class="input">
+        <option value="">Tipo de atividade</option>
+        <option value="Tarefa Diária">Tarefa Diária</option>
+        <option value="Trabalho Bimestral">Trabalho Bimestral</option>
+        <option value="Simulado">Simulado</option>
+        <option value="Avaliação">Avaliação</option>
+      </select>
+
+      <div class="color-preview-row">
+        <span class="color-preview-label">Cor:</span>
+        <span id="editColorDot" class="color-dot" style="background:#555555"></span>
+        <span id="editColorName" class="color-name">Outros</span>
       </div>
+
       <div class="modal-actions">
         <button type="button" id="deleteBtn" class="btn btn-danger">Excluir</button>
         <button type="submit" class="btn btn-primary">Salvar</button>

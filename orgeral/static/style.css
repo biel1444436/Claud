@@ -109,23 +109,22 @@ body {
 
 .textarea { min-height: 52px; }
 
-.color-row {
+.color-preview-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 10px;
-  flex-wrap: wrap;
 }
-.color-row label { font-size: 12px; color: var(--text-muted); }
-.color-opt {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
+.color-preview-label { font-size: 12px; color: var(--text-muted); }
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  transition: background .2s;
 }
-.color-opt input[type="radio"] { accent-color: var(--accent); cursor: pointer; }
+.color-name { font-size: 12px; color: var(--text); }
 
 /* ── Buttons ─────────────────────────────────────── */
 .btn {
@@ -154,7 +153,8 @@ body {
 }
 .upcoming-item:hover { background: #242424; }
 .upcoming-item .up-title { font-size: 13px; font-weight: 500; }
-.upcoming-item .up-date  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.upcoming-item .up-meta  { font-size: 11px; color: var(--accent); margin-top: 2px; }
+.upcoming-item .up-date  { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 .upcoming-empty { font-size: 12px; color: #555; padding: 4px 0; }
 
 /* ── Main ────────────────────────────────────────── */

@@ -11,6 +11,19 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "orgeral.db")
 
+SUBJECT_COLORS = {
+    "Português": "#27ae60",
+    "Matemática": "#2980b9",
+    "Ciências": "#8e44ad",
+    "História": "#e74c3c",
+    "Geografia": "#e67e22",
+    "Inglês": "#16a085",
+    "Artes": "#bb8fce",
+    "Ed. Física": "#c0392b",
+    "Religião": "#f1c40f",
+    "Outros": "#555555",
+}
+
 
 def get_db():
     if "db" not in g:
@@ -36,9 +49,16 @@ def init_db():
             date TEXT NOT NULL,
             time TEXT,
             color TEXT DEFAULT '#555555',
+            subject TEXT DEFAULT '',
+            task_type TEXT DEFAULT '',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    for col in ("subject TEXT DEFAULT ''", "task_type TEXT DEFAULT ''"):
+        try:
+            db.execute(f"ALTER TABLE tasks ADD COLUMN {col}")
+        except Exception:
+            pass
     db.commit()
     db.close()
 
@@ -80,27 +100,36 @@ def parse_tasks_with_groq(text: str) -> list[dict]:
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     today = datetime.now().strftime("%Y-%m-%d")
 
-    prompt = f"""Analise o seguinte documento acadêmico/sistemática e extraia todas as tarefas, atividades, provas, trabalhos, datas de entrega e eventos importantes.
+    prompt = f"""Analise o seguinte documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
 
 Data de hoje: {today}
 
-Para cada item encontrado, retorne um JSON com este formato exato:
+EXTRAIA APENAS estes tipos de atividade (ignore todo o resto, especialmente Recuperação):
+- Tarefa Diária
+- Trabalho Bimestral
+- Simulado
+- Avaliação
+
+Para cada atividade encontrada, retorne um JSON com este formato exato:
 {{
   "tasks": [
     {{
-      "title": "título curto da tarefa",
-      "description": "descrição detalhada opcional",
+      "title": "título curto descrevendo a atividade",
+      "description": "Objetivo do conhecimento: [objetivo da atividade]\\nOnde encontrar: [livro, página, capítulo ou recurso indicado]",
       "date": "YYYY-MM-DD",
-      "time": "HH:MM ou null",
-      "color": "#555555 para tarefa normal, #222222 para prova/avaliação, #888888 para entrega"
+      "time": null,
+      "subject": "nome exato da matéria em português (Português, Matemática, Ciências, História, Geografia, Inglês, Artes, Ed. Física, Religião ou Outros)",
+      "task_type": "Tarefa Diária, Trabalho Bimestral, Simulado ou Avaliação"
     }}
   ]
 }}
 
-Se não houver ano especificado, use {datetime.now().year}. Se a data for vaga (ex: "próxima semana"), estime com base na data de hoje.
-Se não encontrar nenhuma tarefa com data, retorne tasks como lista vazia.
-
-Responda APENAS com o JSON, sem texto adicional.
+Regras:
+- Se não houver ano especificado, use {datetime.now().year}.
+- NÃO inclua Recuperação nem nenhuma atividade de reforço/recuperação.
+- A description DEVE ter os dois campos (Objetivo do conhecimento e Onde encontrar) separados por quebra de linha.
+- Se alguma informação não estiver no documento, escreva "Não informado" no campo.
+- Responda APENAS com o JSON, sem texto adicional.
 
 DOCUMENTO:
 {text[:8000]}"""
@@ -108,7 +137,7 @@ DOCUMENTO:
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
+        temperature=0.1,
     )
 
     raw = response.choices[0].message.content.strip()
@@ -120,7 +149,13 @@ DOCUMENTO:
     raw = raw.strip()
 
     data = json.loads(raw)
-    return data.get("tasks", [])
+    tasks = data.get("tasks", [])
+
+    for t in tasks:
+        subject = t.get("subject", "Outros")
+        t["color"] = SUBJECT_COLORS.get(subject, "#555555")
+
+    return tasks
 
 
 # ── Routes ──────────────────────────────────────────────────────────────────
@@ -143,15 +178,20 @@ def create_task():
     if not data or not data.get("title") or not data.get("date"):
         return jsonify({"error": "title e date são obrigatórios"}), 400
 
+    subject = data.get("subject", "Outros")
+    color = SUBJECT_COLORS.get(subject, data.get("color", "#555555"))
+
     db = get_db()
     cursor = db.execute(
-        "INSERT INTO tasks (title, description, date, time, color) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO tasks (title, description, date, time, color, subject, task_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             data["title"],
             data.get("description", ""),
             data["date"],
             data.get("time"),
-            data.get("color", "#555555"),
+            color,
+            subject,
+            data.get("task_type", ""),
         ),
     )
     db.commit()
@@ -167,14 +207,19 @@ def update_task(task_id):
     if not existing:
         return jsonify({"error": "Tarefa não encontrada"}), 404
 
+    subject = data.get("subject", existing["subject"] or "Outros")
+    color = SUBJECT_COLORS.get(subject, existing["color"])
+
     db.execute(
-        "UPDATE tasks SET title=?, description=?, date=?, time=?, color=? WHERE id=?",
+        "UPDATE tasks SET title=?, description=?, date=?, time=?, color=?, subject=?, task_type=? WHERE id=?",
         (
             data.get("title", existing["title"]),
             data.get("description", existing["description"]),
             data.get("date", existing["date"]),
             data.get("time", existing["time"]),
-            data.get("color", existing["color"]),
+            color,
+            subject,
+            data.get("task_type", existing["task_type"] or ""),
             task_id,
         ),
     )
@@ -222,8 +267,16 @@ def upload_file():
     for t in tasks:
         try:
             cursor = db.execute(
-                "INSERT INTO tasks (title, description, date, time, color) VALUES (?, ?, ?, ?, ?)",
-                (t["title"], t.get("description", ""), t["date"], t.get("time"), t.get("color", "#555555")),
+                "INSERT INTO tasks (title, description, date, time, color, subject, task_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    t["title"],
+                    t.get("description", ""),
+                    t["date"],
+                    t.get("time"),
+                    t.get("color", "#555555"),
+                    t.get("subject", "Outros"),
+                    t.get("task_type", ""),
+                ),
             )
             task = db.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)).fetchone()
             created.append(dict(task))
