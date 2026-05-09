@@ -208,7 +208,13 @@ def upload_file():
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
 
-    tasks = parse_tasks_with_claude(text)
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        return jsonify({"error": "ANTHROPIC_API_KEY não configurada. Defina a variável de ambiente e reinicie o servidor."}), 500
+
+    try:
+        tasks = parse_tasks_with_claude(text)
+    except Exception as e:
+        return jsonify({"error": f"Erro ao processar com IA: {str(e)}"}), 500
 
     db = get_db()
     created = []
