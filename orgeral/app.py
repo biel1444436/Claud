@@ -79,7 +79,7 @@ def extract_text_from_file(file) -> str:
 def parse_tasks_with_gemini(text: str) -> list[dict]:
     api_key = os.environ.get("GEMINI_API_KEY")
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     today = datetime.now().strftime("%Y-%m-%d")
 
