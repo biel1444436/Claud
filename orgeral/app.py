@@ -4,7 +4,7 @@ import sqlite3
 import tempfile
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template, g
-import google.generativeai as genai
+from groq import Groq
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
@@ -76,11 +76,8 @@ def extract_text_from_file(file) -> str:
     return content.decode("utf-8", errors="ignore")
 
 
-def parse_tasks_with_gemini(text: str) -> list[dict]:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
-
+def parse_tasks_with_groq(text: str) -> list[dict]:
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     today = datetime.now().strftime("%Y-%m-%d")
 
     prompt = f"""Analise o seguinte documento acadêmico/sistemática e extraia todas as tarefas, atividades, provas, trabalhos, datas de entrega e eventos importantes.
@@ -108,8 +105,13 @@ Responda APENAS com o JSON, sem texto adicional.
 DOCUMENTO:
 {text[:8000]}"""
 
-    response = model.generate_content(prompt)
-    raw = response.text.strip()
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+    )
+
+    raw = response.choices[0].message.content.strip()
 
     if raw.startswith("```"):
         raw = raw.split("```")[1]
@@ -207,11 +209,11 @@ def upload_file():
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
 
-    if not os.environ.get("GEMINI_API_KEY"):
-        return jsonify({"error": "GEMINI_API_KEY não configurada. Defina a variável de ambiente e reinicie o servidor."}), 500
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"error": "GROQ_API_KEY não configurada. Defina a variável de ambiente e reinicie o servidor."}), 500
 
     try:
-        tasks = parse_tasks_with_gemini(text)
+        tasks = parse_tasks_with_groq(text)
     except Exception as e:
         return jsonify({"error": f"Erro ao processar com IA: {str(e)}"}), 500
 
