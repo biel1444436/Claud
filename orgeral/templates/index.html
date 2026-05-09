@@ -100,6 +100,9 @@
         </label>
       </div>
       <div class="user-info">
+        {% if picture %}
+        <img src="{{ picture }}" class="user-avatar" alt="{{ username }}" referrerpolicy="no-referrer" />
+        {% endif %}
         <span class="username-badge">{{ username }}</span>
         <button class="btn-logout" onclick="doLogout()">Sair</button>
       </div>

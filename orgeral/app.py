@@ -6,14 +6,38 @@ import secrets
 from datetime import datetime
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, g, session, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
+from authlib.integrations.flask_client import OAuth
 from groq import Groq
 
+# ── Secret key (persists across restarts) ────────────────────────────────────
+_SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), ".secret_key")
+
+def _load_secret_key():
+    if os.environ.get("SECRET_KEY"):
+        return os.environ["SECRET_KEY"]
+    if os.path.exists(_SECRET_KEY_FILE):
+        with open(_SECRET_KEY_FILE) as f:
+            return f.read().strip()
+    key = secrets.token_hex(32)
+    with open(_SECRET_KEY_FILE, "w") as f:
+        f.write(key)
+    return key
+
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
+app.secret_key = _load_secret_key()
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "orgeral.db")
+
+# ── Google OAuth ──────────────────────────────────────────────────────────────
+oauth = OAuth(app)
+google = oauth.register(
+    name="google",
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
 
 SUBJECT_COLORS = {
     "Português": "#27ae60",
@@ -48,8 +72,10 @@ def init_db():
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
+            google_id TEXT UNIQUE NOT NULL,
+            email TEXT,
+            name TEXT,
+            picture TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -97,177 +123,59 @@ def current_user_id():
     return session["user_id"]
 
 
-def extract_text_from_file(file) -> str:
-    filename = file.filename.lower()
-    content = file.read()
+# ── Auth Routes ───────────────────────────────────────────────────────────────
 
-    if filename.endswith(".txt") or filename.endswith(".md"):
-        return content.decode("utf-8", errors="ignore")
-
-    if filename.endswith(".pdf"):
-        try:
-            import fitz
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                tmp.write(content)
-                tmp_path = tmp.name
-            doc = fitz.open(tmp_path)
-            text = "\n".join(page.get_text() for page in doc)
-            doc.close()
-            os.unlink(tmp_path)
-            return text
-        except Exception as e:
-            return f"[Erro ao ler PDF: {e}]"
-
-    if filename.endswith(".docx"):
-        try:
-            from docx import Document
-            import io
-            doc = Document(io.BytesIO(content))
-            return "\n".join(p.text for p in doc.paragraphs)
-        except Exception as e:
-            return f"[Erro ao ler DOCX: {e}]"
-
-    return content.decode("utf-8", errors="ignore")
-
-
-def parse_tasks_with_groq(text: str) -> list[dict]:
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    chunk_size = 12000
-    overlap = 500
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        if end >= len(text):
-            break
-        start = end - overlap
-
-    all_tasks = []
-    seen = set()
-
-    for chunk in chunks:
-        prompt = f"""Analise o seguinte trecho de documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
-
-Data de hoje: {today}
-
-EXTRAIA APENAS estes tipos de atividade (ignore todo o resto, especialmente Recuperação):
-- Tarefa Diária
-- Trabalho Bimestral
-- Simulado
-- Avaliação
-
-Para cada atividade encontrada, retorne um JSON com este formato exato:
-{{
-  "tasks": [
-    {{
-      "title": "título curto descrevendo a atividade",
-      "description": "Objetivo do conhecimento: [objetivo da atividade]\\nOnde encontrar: [livro, página, capítulo ou recurso indicado]",
-      "date": "YYYY-MM-DD",
-      "time": null,
-      "subject": "nome exato da matéria em português (Português, Matemática, Ciências, História, Geografia, Inglês, Artes, Ed. Física, Religião ou Outros)",
-      "task_type": "Tarefa Diária, Trabalho Bimestral, Simulado ou Avaliação"
-    }}
-  ]
-}}
-
-Regras:
-- Se não houver ano especificado, use {datetime.now().year}.
-- NÃO inclua Recuperação nem nenhuma atividade de reforço/recuperação.
-- A description DEVE ter os dois campos separados por quebra de linha.
-- Se alguma informação não estiver no documento, escreva "Não informado".
-- Se não houver nenhuma atividade válida neste trecho, retorne tasks como lista vazia.
-- Responda APENAS com o JSON, sem texto adicional.
-
-TRECHO DO DOCUMENTO:
-{chunk}"""
-
-        try:
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-            )
-            raw = response.choices[0].message.content.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            raw = raw.strip()
-            data = json.loads(raw)
-            chunk_tasks = data.get("tasks", [])
-            for t in chunk_tasks:
-                subject = t.get("subject", "Outros")
-                t["color"] = SUBJECT_COLORS.get(subject, "#555555")
-                key = (t.get("title", "").strip().lower(), t.get("date", ""), subject)
-                if key not in seen:
-                    seen.add(key)
-                    all_tasks.append(t)
-        except Exception:
-            continue
-
-    return all_tasks
-
-
-# ── Auth Routes ──────────────────────────────────────────────────────────────
-
-@app.route("/login", methods=["GET"])
+@app.route("/login")
 def login_page():
     if "user_id" in session:
         return redirect(url_for("index"))
+    if not os.environ.get("GOOGLE_CLIENT_ID"):
+        return "<h2 style='font-family:sans-serif;color:#e07070;padding:40px'>Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas variáveis de ambiente.</h2>", 500
     return render_template("login.html")
 
 
-@app.route("/api/auth/login", methods=["POST"])
-def api_login():
-    data = request.json
-    username = (data.get("username") or "").strip()
-    password = data.get("password") or ""
-
-    if not username or not password:
-        return jsonify({"error": "Usuário e senha são obrigatórios"}), 400
-
-    db = get_db()
-    user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
-    if not user or not check_password_hash(user["password_hash"], password):
-        return jsonify({"error": "Usuário ou senha incorretos"}), 401
-
-    session["user_id"] = user["id"]
-    session["username"] = user["username"]
-    return jsonify({"ok": True, "username": user["username"]})
+@app.route("/login/google")
+def login_google():
+    redirect_uri = url_for("callback", _external=True)
+    return google.authorize_redirect(redirect_uri)
 
 
-@app.route("/api/auth/register", methods=["POST"])
-def api_register():
-    data = request.json
-    username = (data.get("username") or "").strip()
-    password = data.get("password") or ""
+@app.route("/callback")
+def callback():
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get("userinfo")
 
-    if not username or not password:
-        return jsonify({"error": "Usuário e senha são obrigatórios"}), 400
-    if len(username) < 3:
-        return jsonify({"error": "Usuário deve ter pelo menos 3 caracteres"}), 400
-    if len(password) < 6:
-        return jsonify({"error": "Senha deve ter pelo menos 6 caracteres"}), 400
+        google_id = user_info["sub"]
+        email     = user_info.get("email", "")
+        name      = user_info.get("name", email)
+        picture   = user_info.get("picture", "")
 
-    db = get_db()
-    existing = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-    if existing:
-        return jsonify({"error": "Nome de usuário já existe"}), 409
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE google_id=?", (google_id,)).fetchone()
 
-    password_hash = generate_password_hash(password)
-    cursor = db.execute(
-        "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-        (username, password_hash),
-    )
-    db.commit()
+        if user:
+            db.execute(
+                "UPDATE users SET email=?, name=?, picture=? WHERE google_id=?",
+                (email, name, picture, google_id),
+            )
+            db.commit()
+            user = db.execute("SELECT * FROM users WHERE google_id=?", (google_id,)).fetchone()
+        else:
+            cursor = db.execute(
+                "INSERT INTO users (google_id, email, name, picture) VALUES (?, ?, ?, ?)",
+                (google_id, email, name, picture),
+            )
+            db.commit()
+            user = db.execute("SELECT * FROM users WHERE id=?", (cursor.lastrowid,)).fetchone()
 
-    session["user_id"] = cursor.lastrowid
-    session["username"] = username
-    return jsonify({"ok": True, "username": username}), 201
+        session["user_id"]  = user["id"]
+        session["username"] = name
+        session["picture"]  = picture
+        return redirect(url_for("index"))
+
+    except Exception as e:
+        return redirect(url_for("login_page"))
 
 
 @app.route("/api/auth/logout", methods=["POST"])
@@ -276,19 +184,16 @@ def api_logout():
     return jsonify({"ok": True})
 
 
-@app.route("/api/auth/me", methods=["GET"])
-def api_me():
-    if "user_id" not in session:
-        return jsonify({"logged_in": False})
-    return jsonify({"logged_in": True, "username": session.get("username")})
-
-
-# ── App Routes ───────────────────────────────────────────────────────────────
+# ── App Routes ────────────────────────────────────────────────────────────────
 
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html", username=session.get("username"))
+    return render_template(
+        "index.html",
+        username=session.get("username"),
+        picture=session.get("picture", ""),
+    )
 
 
 @app.route("/api/tasks", methods=["GET"])
@@ -310,7 +215,7 @@ def create_task():
         return jsonify({"error": "title e date são obrigatórios"}), 400
 
     subject = data.get("subject", "Outros")
-    color = SUBJECT_COLORS.get(subject, data.get("color", "#555555"))
+    color   = SUBJECT_COLORS.get(subject, data.get("color", "#555555"))
 
     db = get_db()
     cursor = db.execute(
@@ -319,30 +224,30 @@ def create_task():
          data.get("time"), color, subject, data.get("task_type", "")),
     )
     db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    task = db.execute("SELECT * FROM tasks WHERE id=?", (cursor.lastrowid,)).fetchone()
     return jsonify(dict(task)), 201
 
 
 @app.route("/api/tasks/bulk", methods=["POST"])
 @login_required
 def bulk_action():
-    data = request.json
+    data   = request.json
     action = data.get("action")
-    ids = data.get("ids", [])
+    ids    = data.get("ids", [])
     if not ids:
         return jsonify({"error": "Nenhuma tarefa selecionada"}), 400
 
     uid = current_user_id()
-    db = get_db()
-    placeholders = ",".join("?" * len(ids))
+    db  = get_db()
+    ph  = ",".join("?" * len(ids))
     params = ids + [uid]
 
     if action == "delete":
-        db.execute(f"DELETE FROM tasks WHERE id IN ({placeholders}) AND user_id=?", params)
+        db.execute(f"DELETE FROM tasks WHERE id IN ({ph}) AND user_id=?", params)
     elif action == "complete":
-        db.execute(f"UPDATE tasks SET completed=1 WHERE id IN ({placeholders}) AND user_id=?", params)
+        db.execute(f"UPDATE tasks SET completed=1 WHERE id IN ({ph}) AND user_id=?", params)
     elif action == "uncomplete":
-        db.execute(f"UPDATE tasks SET completed=0 WHERE id IN ({placeholders}) AND user_id=?", params)
+        db.execute(f"UPDATE tasks SET completed=0 WHERE id IN ({ph}) AND user_id=?", params)
     db.commit()
     return jsonify({"ok": True})
 
@@ -351,7 +256,7 @@ def bulk_action():
 @login_required
 def update_task(task_id):
     data = request.json
-    db = get_db()
+    db   = get_db()
     existing = db.execute(
         "SELECT * FROM tasks WHERE id=? AND user_id=?", (task_id, current_user_id())
     ).fetchone()
@@ -359,7 +264,7 @@ def update_task(task_id):
         return jsonify({"error": "Tarefa não encontrada"}), 404
 
     subject = data.get("subject", existing["subject"] or "Outros")
-    color = SUBJECT_COLORS.get(subject, existing["color"])
+    color   = SUBJECT_COLORS.get(subject, existing["color"])
 
     db.execute(
         "UPDATE tasks SET title=?, description=?, date=?, time=?, color=?, subject=?, task_type=? WHERE id=? AND user_id=?",
@@ -369,7 +274,7 @@ def update_task(task_id):
          task_id, current_user_id()),
     )
     db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    task = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
     return jsonify(dict(task))
 
 
@@ -386,7 +291,7 @@ def toggle_complete(task_id):
     db.execute("UPDATE tasks SET completed=? WHERE id=? AND user_id=?",
                (new_status, task_id, current_user_id()))
     db.commit()
-    task = db.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+    task = db.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
     return jsonify(dict(task))
 
 
@@ -404,7 +309,6 @@ def delete_task(task_id):
 def upload_file():
     if "file" not in request.files:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
-
     file = request.files["file"]
     if not file.filename:
         return jsonify({"error": "Arquivo inválido"}), 400
@@ -417,7 +321,6 @@ def upload_file():
     text = extract_text_from_file(file)
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
-
     if not os.environ.get("GROQ_API_KEY"):
         return jsonify({"error": "GROQ_API_KEY não configurada."}), 500
 
@@ -435,12 +338,107 @@ def upload_file():
                 (current_user_id(), t["title"], t.get("description", ""), t["date"],
                  t.get("time"), t.get("color", "#555555"), t.get("subject", "Outros"), t.get("task_type", "")),
             )
-            task = db.execute("SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)).fetchone()
+            task = db.execute("SELECT * FROM tasks WHERE id=?", (cursor.lastrowid,)).fetchone()
             created.append(dict(task))
         except Exception:
             continue
     db.commit()
     return jsonify({"created": len(created), "tasks": created})
+
+
+# ── File helpers ──────────────────────────────────────────────────────────────
+
+def extract_text_from_file(file) -> str:
+    filename = file.filename.lower()
+    content  = file.read()
+
+    if filename.endswith(".txt") or filename.endswith(".md"):
+        return content.decode("utf-8", errors="ignore")
+
+    if filename.endswith(".pdf"):
+        try:
+            import fitz
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                tmp.write(content); tmp_path = tmp.name
+            doc  = fitz.open(tmp_path)
+            text = "\n".join(page.get_text() for page in doc)
+            doc.close(); os.unlink(tmp_path)
+            return text
+        except Exception as e:
+            return f"[Erro ao ler PDF: {e}]"
+
+    if filename.endswith(".docx"):
+        try:
+            from docx import Document
+            import io
+            doc = Document(io.BytesIO(content))
+            return "\n".join(p.text for p in doc.paragraphs)
+        except Exception as e:
+            return f"[Erro ao ler DOCX: {e}]"
+
+    return content.decode("utf-8", errors="ignore")
+
+
+def parse_tasks_with_groq(text: str) -> list[dict]:
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    today  = datetime.now().strftime("%Y-%m-%d")
+
+    chunk_size, overlap = 12000, 500
+    chunks, start = [], 0
+    while start < len(text):
+        end = start + chunk_size
+        chunks.append(text[start:end])
+        if end >= len(text): break
+        start = end - overlap
+
+    all_tasks, seen = [], set()
+
+    for chunk in chunks:
+        prompt = f"""Analise o seguinte trecho de documento acadêmico/sistemática escolar e extraia as atividades de cada matéria.
+
+Data de hoje: {today}
+
+EXTRAIA APENAS estes tipos (ignore Recuperação e reforço):
+- Tarefa Diária  - Trabalho Bimestral  - Simulado  - Avaliação
+
+Retorne APENAS este JSON:
+{{
+  "tasks": [{{
+    "title": "título curto",
+    "description": "Objetivo do conhecimento: [objetivo]\\nOnde encontrar: [recurso]",
+    "date": "YYYY-MM-DD",
+    "time": null,
+    "subject": "Português|Matemática|Ciências|História|Geografia|Inglês|Artes|Ed. Física|Religião|Outros",
+    "task_type": "Tarefa Diária|Trabalho Bimestral|Simulado|Avaliação"
+  }}]
+}}
+
+Ano padrão: {datetime.now().year}. Se não houver tarefas válidas, retorne lista vazia.
+
+TRECHO:
+{chunk}"""
+
+        try:
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+            )
+            raw = resp.choices[0].message.content.strip()
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"): raw = raw[4:]
+            raw = raw.strip()
+            for t in json.loads(raw).get("tasks", []):
+                subj = t.get("subject", "Outros")
+                t["color"] = SUBJECT_COLORS.get(subj, "#555555")
+                key = (t.get("title", "").strip().lower(), t.get("date", ""), subj)
+                if key not in seen:
+                    seen.add(key); all_tasks.append(t)
+        except Exception:
+            continue
+
+    return all_tasks
 
 
 if __name__ == "__main__":

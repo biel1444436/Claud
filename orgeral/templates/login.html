@@ -6,63 +6,43 @@
   <title>Orgeral — Entrar</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0e0e0e; --surface: #161616; --surface2: #1e1e1e;
-      --border: #2a2a2a; --text: #e8e8e8; --text-muted: #888;
-      --accent: #d4d4d4; --danger: #c0392b; --success: #27ae60;
-      --radius: 8px;
-    }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg); color: var(--text);
+      background: #0e0e0e; color: #e8e8e8;
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
     }
     .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 36px 32px; width: 360px; max-width: 95vw;
+      background: #161616; border: 1px solid #2a2a2a;
+      border-radius: 16px; padding: 44px 36px;
+      width: 380px; max-width: 95vw; text-align: center;
     }
-    .logo {
+    .logo { margin-bottom: 32px; }
+    .logo-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+    .logo-text  { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
+    .subtitle { font-size: 13px; color: #888; margin-top: 6px; }
+
+    .btn-google {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      width: 100%; padding: 13px 20px;
+      background: #fff; color: #111;
+      border: none; border-radius: 8px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: opacity .15s;
+      margin-top: 24px; text-decoration: none;
+    }
+    .btn-google:hover { opacity: .9; }
+    .btn-google svg { flex-shrink: 0; }
+
+    .divider { margin: 24px 0 0; color: #444; font-size: 12px; }
+    .features {
+      margin-top: 28px; text-align: left;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .feature {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 28px;
+      font-size: 13px; color: #888;
     }
-    .logo-icon { font-size: 22px; }
-    .logo-text  { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
-    .tabs {
-      display: flex; gap: 0; margin-bottom: 24px;
-      border-bottom: 1px solid var(--border);
-    }
-    .tab {
-      flex: 1; padding: 9px; text-align: center; cursor: pointer;
-      font-size: 13px; font-weight: 500; color: var(--text-muted);
-      background: none; border: none; border-bottom: 2px solid transparent;
-      transition: color .15s, border-color .15s;
-    }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .input {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: var(--radius); color: var(--text); font-size: 14px;
-      padding: 10px 12px; margin-bottom: 12px; outline: none;
-      transition: border-color .2s; font-family: inherit;
-    }
-    .input:focus { border-color: var(--accent); }
-    .input::placeholder { color: #555; }
-    .btn {
-      width: 100%; padding: 11px; border-radius: var(--radius); border: none;
-      font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s;
-      background: var(--accent); color: #111; margin-top: 4px;
-    }
-    .btn:hover { opacity: .88; }
-    .error-msg {
-      background: rgba(192,57,43,.12); border: 1px solid #4a2020;
-      color: #e07070; font-size: 12px; padding: 9px 12px;
-      border-radius: var(--radius); margin-bottom: 12px; display: none;
-    }
-    .success-msg {
-      background: rgba(39,174,96,.12); border: 1px solid #1e4d2e;
-      color: #5dba7d; font-size: 12px; padding: 9px 12px;
-      border-radius: var(--radius); margin-bottom: 12px; display: none;
-    }
-    .hint { font-size: 11px; color: var(--text-muted); margin-top: 16px; text-align: center; }
+    .feature-icon { font-size: 16px; }
   </style>
 </head>
 <body>
@@ -70,97 +50,27 @@
   <div class="logo">
     <span class="logo-icon">◈</span>
     <span class="logo-text">Orgeral</span>
+    <p class="subtitle">Organize sua vida escolar com IA</p>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</button>
-    <button class="tab" id="tabRegister" onclick="showTab('register')">Criar conta</button>
+  <a href="/login/google" class="btn-google">
+    <svg width="20" height="20" viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+    </svg>
+    Entrar com Google
+  </a>
+
+  <p class="divider">Suas tarefas ficam salvas na sua conta Google</p>
+
+  <div class="features">
+    <div class="feature"><span class="feature-icon">📅</span> Calendário de atividades</div>
+    <div class="feature"><span class="feature-icon">🤖</span> IA extrai tarefas da sistemática</div>
+    <div class="feature"><span class="feature-icon">✓</span> Checklist e controle de conclusão</div>
+    <div class="feature"><span class="feature-icon">🎨</span> Cores por matéria</div>
   </div>
-
-  <div id="errorMsg" class="error-msg"></div>
-  <div id="successMsg" class="success-msg"></div>
-
-  <!-- Login form -->
-  <form id="loginForm" onsubmit="doLogin(event)">
-    <input type="text" class="input" id="loginUser" placeholder="Usuário" autocomplete="username" required />
-    <input type="password" class="input" id="loginPass" placeholder="Senha" autocomplete="current-password" required />
-    <button type="submit" class="btn">Entrar</button>
-  </form>
-
-  <!-- Register form -->
-  <form id="registerForm" style="display:none" onsubmit="doRegister(event)">
-    <input type="text" class="input" id="regUser" placeholder="Usuário (mínimo 3 caracteres)" autocomplete="username" required />
-    <input type="password" class="input" id="regPass" placeholder="Senha (mínimo 6 caracteres)" autocomplete="new-password" required />
-    <input type="password" class="input" id="regPass2" placeholder="Confirmar senha" autocomplete="new-password" required />
-    <button type="submit" class="btn">Criar conta</button>
-  </form>
-
-  <p class="hint">Suas tarefas ficam salvas na sua conta.</p>
 </div>
-
-<script>
-  function showTab(tab) {
-    const isLogin = tab === "login";
-    document.getElementById("loginForm").style.display = isLogin ? "" : "none";
-    document.getElementById("registerForm").style.display = isLogin ? "none" : "";
-    document.getElementById("tabLogin").classList.toggle("active", isLogin);
-    document.getElementById("tabRegister").classList.toggle("active", !isLogin);
-    clearMessages();
-  }
-
-  function showError(msg) {
-    const el = document.getElementById("errorMsg");
-    el.textContent = msg; el.style.display = "";
-    document.getElementById("successMsg").style.display = "none";
-  }
-
-  function showSuccess(msg) {
-    const el = document.getElementById("successMsg");
-    el.textContent = msg; el.style.display = "";
-    document.getElementById("errorMsg").style.display = "none";
-  }
-
-  function clearMessages() {
-    document.getElementById("errorMsg").style.display = "none";
-    document.getElementById("successMsg").style.display = "none";
-  }
-
-  async function doLogin(e) {
-    e.preventDefault();
-    clearMessages();
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: document.getElementById("loginUser").value.trim(),
-        password: document.getElementById("loginPass").value,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) return showError(data.error);
-    window.location.href = "/";
-  }
-
-  async function doRegister(e) {
-    e.preventDefault();
-    clearMessages();
-    const pass = document.getElementById("regPass").value;
-    const pass2 = document.getElementById("regPass2").value;
-    if (pass !== pass2) return showError("As senhas não coincidem.");
-
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: document.getElementById("regUser").value.trim(),
-        password: pass,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) return showError(data.error);
-    showSuccess("Conta criada! Entrando...");
-    setTimeout(() => window.location.href = "/", 800);
-  }
-</script>
 </body>
 </html>
