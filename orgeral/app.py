@@ -4,7 +4,7 @@ import sqlite3
 import tempfile
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template, g
-import anthropic
+import google.generativeai as genai
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
@@ -76,8 +76,11 @@ def extract_text_from_file(file) -> str:
     return content.decode("utf-8", errors="ignore")
 
 
-def parse_tasks_with_claude(text: str) -> list[dict]:
-    client = anthropic.Anthropic()
+def parse_tasks_with_gemini(text: str) -> list[dict]:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+
     today = datetime.now().strftime("%Y-%m-%d")
 
     prompt = f"""Analise o seguinte documento acadêmico/sistemática e extraia todas as tarefas, atividades, provas, trabalhos, datas de entrega e eventos importantes.
@@ -105,13 +108,9 @@ Responda APENAS com o JSON, sem texto adicional.
 DOCUMENTO:
 {text[:8000]}"""
 
-    response = client.messages.create(
-        model="claude-opus-4-7",
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    response = model.generate_content(prompt)
+    raw = response.text.strip()
 
-    raw = response.content[0].text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
@@ -208,11 +207,11 @@ def upload_file():
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        return jsonify({"error": "ANTHROPIC_API_KEY não configurada. Defina a variável de ambiente e reinicie o servidor."}), 500
+    if not os.environ.get("GEMINI_API_KEY"):
+        return jsonify({"error": "GEMINI_API_KEY não configurada. Defina a variável de ambiente e reinicie o servidor."}), 500
 
     try:
-        tasks = parse_tasks_with_claude(text)
+        tasks = parse_tasks_with_gemini(text)
     except Exception as e:
         return jsonify({"error": f"Erro ao processar com IA: {str(e)}"}), 500
 
