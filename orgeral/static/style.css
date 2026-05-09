@@ -106,6 +106,8 @@ body {
 }
 .input:focus { border-color: var(--accent); }
 .input::placeholder { color: #555; }
+select.input { cursor: pointer; }
+select.input option { background: var(--surface2); }
 
 .textarea { min-height: 52px; }
 
