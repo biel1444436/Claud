@@ -67,6 +67,42 @@
       z-index: 9999;
     }
 
+    /* ─── PHOTO SYSTEM (real img + graceful fallback) ──────── */
+    .photo {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .photo img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+      opacity: 0;
+      animation: imgFade 0.6s var(--ease-out) forwards;
+    }
+    @keyframes imgFade { to { opacity: 1; } }
+    .photo-fallback {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(145deg, var(--bege-light) 0%, var(--bege) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-align: center;
+      padding: 1rem;
+    }
+    .photo-fallback svg { opacity: 0.35; }
+
     /* Skip link — accessibility */
     .skip-link {
       position: absolute;
@@ -796,6 +832,17 @@
     }
     .ad-img.after { background: linear-gradient(145deg, #deeade, #c4d8c4); color: #4a6f4a; }
     .ad-img svg { opacity: 0.35; }
+    .ad-img img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+      opacity: 0;
+      animation: imgFade 0.6s var(--ease-out) forwards;
+    }
+    .ad-img .ad-tag { z-index: 2; }
     .ad-tag {
       position: absolute;
       top: 0; left: 0; right: 0;
@@ -1142,9 +1189,14 @@
     <div class="hero-visual" aria-hidden="true">
       <div class="hero-ring"></div>
       <div class="hero-img-wrap">
-        <div class="hero-img-placeholder">
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-          Foto Dra. Isabela
+        <div class="photo">
+          <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=900&q=80&auto=format&fit=crop"
+               alt="Dra. Isabela Motta, dentista especialista em odontologia estética"
+               loading="eager" onerror="this.remove()" />
+          <div class="photo-fallback">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+            Foto Dra. Isabela
+          </div>
         </div>
       </div>
       <div class="hero-badge">
@@ -1187,9 +1239,14 @@
 
       <div class="sobre-img-wrap reveal-left">
         <div class="sobre-img-frame">
-          <div class="hero-img-placeholder" style="aspect-ratio:3/4">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
-            Foto da Clínica
+          <div class="photo">
+            <img src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=900&q=80&auto=format&fit=crop"
+                 alt="Interior moderno da clínica odontológica"
+                 loading="lazy" onerror="this.remove()" />
+            <div class="photo-fallback">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+              Foto da Clínica
+            </div>
           </div>
         </div>
         <div class="sobre-accent" aria-hidden="true"></div>
@@ -1387,10 +1444,12 @@
         <div class="ad-images">
           <div class="ad-img">
             <span class="ad-tag antes">Antes</span>
+            <img src="https://images.unsplash.com/photo-1581585504850-e2d0b9d3a4a0?w=500&q=80&auto=format&fit=crop" alt="Sorriso antes do tratamento" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
           <div class="ad-img after">
             <span class="ad-tag depois">Depois</span>
+            <img src="https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=500&q=80&auto=format&fit=crop" alt="Sorriso depois do tratamento de lentes" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
         </div>
@@ -1401,10 +1460,12 @@
         <div class="ad-images">
           <div class="ad-img">
             <span class="ad-tag antes">Antes</span>
+            <img src="https://images.unsplash.com/photo-1588776813677-77aaf5595b83?w=500&q=80&auto=format&fit=crop" alt="Dentes antes do clareamento" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
           <div class="ad-img after">
             <span class="ad-tag depois">Depois</span>
+            <img src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=500&q=80&auto=format&fit=crop" alt="Dentes depois do clareamento" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
         </div>
@@ -1415,10 +1476,12 @@
         <div class="ad-images">
           <div class="ad-img">
             <span class="ad-tag antes">Antes</span>
+            <img src="https://images.unsplash.com/photo-1612277795421-9bc7706a4a34?w=500&q=80&auto=format&fit=crop" alt="Antes do implante dentário" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
           <div class="ad-img after">
             <span class="ad-tag depois">Depois</span>
+            <img src="https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?w=500&q=80&auto=format&fit=crop" alt="Depois do implante dentário" loading="lazy" onerror="this.remove()" />
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
         </div>
