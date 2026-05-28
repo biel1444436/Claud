@@ -4,73 +4,441 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orgeral — Entrar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030305;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --success: #10b981;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --glass: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-hover: rgba(255,255,255,0.07);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0e0e0e; color: #e8e8e8;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
+
+    /* ── Animated Background ── */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      animation: drift 20s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #6366f1, transparent 70%);
+      top: -200px; left: -200px;
+      animation-duration: 25s;
+    }
+    .orb-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #8b5cf6, transparent 70%);
+      bottom: -150px; right: -100px;
+      animation-duration: 30s;
+      animation-delay: -10s;
+    }
+    .orb-3 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #06b6d4, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      animation-duration: 20s;
+      animation-delay: -5s;
+      opacity: 0.08;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(30px, -20px) scale(1.05); }
+      66%       { transform: translate(-20px, 30px) scale(0.97); }
+    }
+
+    /* grid overlay */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 48px 48px;
+      z-index: 0;
+    }
+
+    /* particles */
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Card ── */
+    .card-wrap {
+      position: relative;
+      z-index: 10;
+      width: 420px;
+      max-width: 95vw;
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .card-wrap.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
     .card {
-      background: #161616; border: 1px solid #2a2a2a;
-      border-radius: 16px; padding: 44px 36px;
-      width: 380px; max-width: 95vw; text-align: center;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 48px 40px;
+      box-shadow:
+        0 0 0 1px rgba(99,102,241,0.1),
+        0 32px 64px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
     }
-    .logo { margin-bottom: 32px; }
-    .logo-icon { font-size: 36px; display: block; margin-bottom: 8px; }
-    .logo-text  { font-size: 24px; font-weight: 700; letter-spacing: 1px; }
-    .subtitle { font-size: 13px; color: #888; margin-top: 6px; }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), rgba(139,92,246,0.5), transparent);
+    }
+
+    /* ── Logo ── */
+    .logo {
+      text-align: center;
+      margin-bottom: 36px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s;
+    }
+    .logo.visible { opacity: 1; transform: translateY(0); }
+
+    .logo-icon-wrap {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+      border: 1px solid rgba(99,102,241,0.3);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      position: relative;
+    }
+    .logo-icon-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(139,92,246,0.3));
+      z-index: -1;
+      filter: blur(8px);
+    }
+    .logo-icon { font-size: 28px; }
+    .logo-text {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-weight: 400;
+    }
+
+    /* ── Google Button ── */
+    .btn-google-wrap {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease 0.3s, transform 0.5s ease 0.3s;
+    }
+    .btn-google-wrap.visible { opacity: 1; transform: translateY(0); }
 
     .btn-google {
-      display: flex; align-items: center; justify-content: center; gap: 12px;
-      width: 100%; padding: 13px 20px;
-      background: #fff; color: #111;
-      border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 600;
-      cursor: pointer; transition: opacity .15s;
-      margin-top: 24px; text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s, box-shadow 0.2s;
     }
-    .btn-google:hover { opacity: .9; }
-    .btn-google svg { flex-shrink: 0; }
+    .btn-google::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-google:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(99,102,241,0.4);
+      box-shadow: 0 0 20px rgba(99,102,241,0.15), 0 4px 12px rgba(0,0,0,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-google:hover::before { opacity: 1; }
+    .btn-google:active { transform: translateY(0); }
 
-    .divider { margin: 24px 0 0; color: #444; font-size: 12px; }
+    .google-icon { flex-shrink: 0; position: relative; z-index: 1; }
+    .btn-google span { position: relative; z-index: 1; }
+
+    /* ── Divider ── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+      opacity: 0;
+      transition: opacity 0.5s ease 0.45s;
+    }
+    .divider.visible { opacity: 1; }
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+    }
+    .divider-text { font-size: 11px; color: var(--text-muted); white-space: nowrap; font-weight: 500; letter-spacing: 0.5px; }
+
+    /* ── Features ── */
     .features {
-      margin-top: 28px; text-align: left;
-      display: flex; flex-direction: column; gap: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.5s ease 0.55s, transform 0.5s ease 0.55s;
     }
+    .features.visible { opacity: 1; transform: translateY(0); }
+
     .feature {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 13px; color: #888;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.2s, border-color 0.2s;
     }
-    .feature-icon { font-size: 16px; }
+    .feature:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(99,102,241,0.15);
+    }
+    .feature-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: rgba(99,102,241,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .feature-text { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+    .feature-text strong { color: var(--text); font-weight: 500; }
+
+    /* ── Badge ── */
+    .badge {
+      position: absolute;
+      top: 20px; right: 20px;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: #34d399;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-dot {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #34d399;
+      margin-right: 4px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
   </style>
 </head>
 <body>
-<div class="card">
-  <div class="logo">
-    <span class="logo-icon">◈</span>
-    <span class="logo-text">Orgeral</span>
-    <p class="subtitle">Organize sua vida escolar com IA</p>
+  <div class="bg-canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="bg-grid"></div>
+  <canvas id="particles-canvas"></canvas>
+
+  <div class="card-wrap" id="cardWrap">
+    <div class="card">
+      <div class="badge"><span class="badge-dot"></span>Seguro</div>
+
+      <div class="logo" id="logo">
+        <div class="logo-icon-wrap">
+          <span class="logo-icon">◈</span>
+        </div>
+        <div class="logo-text">Orgeral</div>
+        <p class="logo-sub">Organize sua vida escolar com IA</p>
+      </div>
+
+      <div class="btn-google-wrap" id="btnWrap">
+        <a href="/login/google" class="btn-google">
+          <svg class="google-icon" width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          <span>Entrar com Google</span>
+        </a>
+      </div>
+
+      <div class="divider" id="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">Incluído na sua conta Google</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="features" id="features">
+        <div class="feature">
+          <div class="feature-icon">📅</div>
+          <span class="feature-text"><strong>Calendário inteligente</strong> de atividades</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🤖</div>
+          <span class="feature-text"><strong>IA extrai tarefas</strong> da sistemática escolar</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✓</div>
+          <span class="feature-text"><strong>Checklist</strong> e controle de conclusão</span>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🎨</div>
+          <span class="feature-text"><strong>Cores</strong> personalizadas por matéria</span>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <a href="/login/google" class="btn-google">
-    <svg width="20" height="20" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-    </svg>
-    Entrar com Google
-  </a>
+  <script>
+    // Particles
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
-  <p class="divider">Suas tarefas ficam salvas na sua conta Google</p>
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
-  <div class="features">
-    <div class="feature"><span class="feature-icon">📅</span> Calendário de atividades</div>
-    <div class="feature"><span class="feature-icon">🤖</span> IA extrai tarefas da sistemática</div>
-    <div class="feature"><span class="feature-icon">✓</span> Checklist e controle de conclusão</div>
-    <div class="feature"><span class="feature-icon">🎨</span> Cores por matéria</div>
-  </div>
-</div>
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 1.5 + 0.3;
+        this.speedX = (Math.random() - 0.5) * 0.3;
+        this.speedY = (Math.random() - 0.5) * 0.3;
+        this.opacity = Math.random() * 0.4 + 0.05;
+        this.life = 0;
+        this.maxLife = Math.random() * 300 + 200;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life++;
+        if (this.life > this.maxLife) this.reset();
+      }
+      draw() {
+        const alpha = this.life < 50
+          ? (this.life / 50) * this.opacity
+          : this.life > this.maxLife - 50
+            ? ((this.maxLife - this.life) / 50) * this.opacity
+            : this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(148,163,184,${alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = Array.from({ length: 80 }, () => new Particle());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    initParticles();
+    animate();
+    window.addEventListener('resize', () => { resize(); initParticles(); });
+
+    // Entrance animations
+    setTimeout(() => {
+      document.getElementById('cardWrap').classList.add('visible');
+      setTimeout(() => document.getElementById('logo').classList.add('visible'), 100);
+      setTimeout(() => document.getElementById('btnWrap').classList.add('visible'), 250);
+      setTimeout(() => document.getElementById('divider').classList.add('visible'), 400);
+      setTimeout(() => document.getElementById('features').classList.add('visible'), 500);
+    }, 100);
+  </script>
 </body>
 </html>
