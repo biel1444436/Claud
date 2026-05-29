@@ -1,5 +1,15 @@
 services:
   - type: web
+    name: nexus-studio
+    runtime: static
+    staticPublishPath: agencia
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600
+
+  - type: web
     name: orgeral
     runtime: python
     rootDir: orgeral
