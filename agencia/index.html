@@ -459,76 +459,76 @@
 
     /* ── EXAMPLE 2: FOOD ── */
     .scene-food {
-      height: 360px;
-      background: linear-gradient(135deg,#1a080e,#270e15);
+      height: 420px;
+      background: #0a0402;
       position: relative; overflow: hidden;
       display: flex; align-items: center; justify-content: center;
     }
-    .food-glow {
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(circle at 30% 50%, rgba(244,63,94,.12) 0%, transparent 55%),
-        radial-gradient(circle at 70% 50%, rgba(245,158,11,.09) 0%, transparent 55%);
-    }
-    .burger {
-      position: relative; display: flex; flex-direction: column;
-      align-items: center; cursor: pointer; z-index: 2;
-    }
-    .blayer {
-      font-size: 38px; margin: -5px 0;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,.5));
-      transition: transform .4s cubic-bezier(.34,1.56,.64,1);
-      animation: blayerF 3s ease-in-out infinite;
-    }
-    .blayer:nth-child(1) { font-size: 44px; animation-delay: 0s; }
-    .blayer:nth-child(2) { animation-delay: .1s; }
-    .blayer:nth-child(3) { animation-delay: .2s; }
-    .blayer:nth-child(4) { animation-delay: .3s; }
-    .blayer:nth-child(5) { font-size: 44px; animation-delay: .4s; }
-    @keyframes blayerF {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-5px); }
-    }
-    .burger:hover .blayer:nth-child(1) { transform: translateY(-32px)!important; }
-    .burger:hover .blayer:nth-child(2) { transform: translateY(-22px)!important; }
-    .burger:hover .blayer:nth-child(3) { transform: translateY(-11px)!important; }
-    .burger:hover .blayer:nth-child(4) { transform: translateY(0)!important; }
-    .burger:hover .blayer:nth-child(5) { transform: translateY(6px)!important; }
 
-    .ingr {
-      position: absolute; font-size: 24px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,.5));
-      animation: ingrF 6s ease-in-out infinite;
+    /* Burger photo + fire */
+    .burger-photo-wrap {
+      position: absolute; inset: 0; z-index: 1;
+    }
+    .burger-photo {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center;
+      display: block;
+    }
+    .burger-photo-fallback {
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 50% 80%, #3d1200 0%, #1a0800 40%, #0a0402 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 80px;
+      filter: drop-shadow(0 0 40px rgba(255,100,0,.6));
+    }
+    /* warm fire overlay on the photo */
+    .fire-overlay {
+      position: absolute; inset: 0; z-index: 2;
+      background: linear-gradient(
+        to bottom,
+        transparent 30%,
+        rgba(0,0,0,.15) 60%,
+        rgba(0,0,0,.55) 100%
+      );
+    }
+    /* vignette glow from below */
+    .fire-vignette {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+      height: 55%;
+      background: linear-gradient(to top,
+        rgba(200,60,0,.35) 0%,
+        rgba(200,80,0,.1) 40%,
+        transparent 100%);
       pointer-events: none;
     }
-    .ingr:nth-child(1){top:14%;left:7%;font-size:28px;animation-delay:0s}
-    .ingr:nth-child(2){top:18%;right:10%;animation-delay:1s}
-    .ingr:nth-child(3){bottom:18%;left:10%;animation-delay:2s;font-size:20px}
-    .ingr:nth-child(4){bottom:14%;right:7%;animation-delay:.5s;font-size:26px}
-    .ingr:nth-child(5){top:50%;left:4%;transform:translateY(-50%);animation-delay:1.5s;font-size:19px}
-    .ingr:nth-child(6){top:50%;right:4%;transform:translateY(-50%);animation-delay:2.5s;font-size:21px}
-    @keyframes ingrF {
-      0%,100% { transform: translateY(0) rotate(0deg); }
-      33%      { transform: translateY(-14px) rotate(6deg); }
-      66%      { transform: translateY(9px) rotate(-4deg); }
+    /* fire canvas (mix-blend: screen = pure fire look on photo) */
+    .fire-canvas {
+      position: absolute; inset: 0; z-index: 3;
+      mix-blend-mode: screen;
+      pointer-events: none;
     }
 
-    .spark {
-      position: absolute; width: 4px; height: 4px; border-radius: 50%;
-      background: var(--amber); box-shadow: 0 0 7px var(--amber);
-      animation: sparkFly 2.8s ease-in-out infinite;
+    /* ember particles */
+    .ember {
+      position: absolute; z-index: 4;
+      width: 4px; height: 4px; border-radius: 50%;
+      background: #ff9500;
+      box-shadow: 0 0 6px #ff9500, 0 0 12px rgba(255,149,0,.5);
+      animation: emberRise var(--dur,3s) ease-out var(--del,0s) infinite;
+      pointer-events: none;
     }
-    @keyframes sparkFly {
-      0%   { opacity: 0; transform: translate(0,0) scale(0); }
-      30%  { opacity: 1; transform: translate(var(--tx),var(--ty)) scale(1); }
-      100% { opacity: 0; transform: translate(calc(var(--tx)*2.6),calc(var(--ty)*2.6)) scale(0); }
+    @keyframes emberRise {
+      0%   { transform: translate(0,0) scale(1); opacity: .9; }
+      60%  { opacity: .7; }
+      100% { transform: translate(var(--dx,10px), -200px) scale(.2); opacity: 0; }
     }
 
+    /* menu glass card */
     .food-menu {
-      position: absolute; top: 18px; left: 18px;
-      background: rgba(0,0,0,.62); backdrop-filter: blur(14px);
-      border: 1px solid rgba(244,63,94,.2); border-radius: 11px;
-      padding: 11px 15px;
+      position: absolute; top: 14px; left: 14px; z-index: 6;
+      background: rgba(0,0,0,.72); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,100,0,.25); border-radius: 11px;
+      padding: 10px 14px;
     }
     .food-row { display: flex; justify-content: space-between; gap: 20px;
       font-size: 12px; margin-bottom: 5px; }
@@ -537,7 +537,7 @@
     .food-price { color: #fbbf24; font-weight: 800; }
 
     .food-btn {
-      position: absolute; bottom: 18px; right: 18px;
+      position: absolute; bottom: 14px; left: 14px; z-index: 6;
       background: linear-gradient(135deg,#f43f5e,#f97316);
       color: #fff; border: none; border-radius: 9px;
       padding: 9px 18px; font-size: 12px; font-weight: 800;
@@ -546,7 +546,86 @@
     }
     @keyframes foodBtnGlow {
       0%,100% { box-shadow: 0 0 10px rgba(244,63,94,.3); }
-      50%      { box-shadow: 0 0 22px rgba(244,63,94,.65), 0 0 40px rgba(249,115,22,.25); }
+      50%      { box-shadow: 0 0 24px rgba(244,63,94,.7), 0 0 44px rgba(249,115,22,.3); }
+    }
+
+    /* ── COCA-COLA ANIMATION ── */
+    .cola-scene {
+      position: absolute; right: 0; top: 0; bottom: 0;
+      width: 160px; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      overflow: visible;
+      transform: translateX(180px);
+      transition: transform .9s cubic-bezier(.34,1.42,.64,1);
+    }
+    .cola-scene.in { transform: translateX(0); }
+
+    .cola-bottle-wrap {
+      position: relative;
+      width: 90px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Cap that flies off */
+    .cola-cap {
+      position: absolute;
+      top: -4px; left: 50%;
+      transform: translateX(-50%);
+      width: 22px; height: 12px;
+      background: linear-gradient(to bottom, #222, #111);
+      border-radius: 4px 4px 0 0;
+      z-index: 10;
+      transition: transform .5s cubic-bezier(.2,-1,.6,1), opacity .5s ease;
+    }
+    .cola-cap.pop {
+      transform: translateX(28px) translateY(-60px) rotate(40deg);
+      opacity: 0;
+    }
+
+    /* Bubble container */
+    .cola-bubbles {
+      position: absolute;
+      top: 8px; left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      pointer-events: none;
+      z-index: 9;
+    }
+    .cbubble {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,.7);
+      animation: bubbleUp var(--bd,2s) ease-out var(--bdelay,0s) infinite;
+      opacity: 0;
+    }
+    @keyframes bubbleUp {
+      0%   { transform: translateX(var(--bx,0px)) translateY(0) scale(0); opacity: 0; }
+      15%  { opacity: .8; transform: translateX(var(--bx,0px)) translateY(-10px) scale(1); }
+      100% { transform: translateX(calc(var(--bx,0px) + var(--bdx,4px))) translateY(-80px) scale(.3); opacity: 0; }
+    }
+
+    /* fizz spray */
+    .cola-fizz {
+      position: absolute; top: -2px; left: 50%;
+      transform: translateX(-50%);
+      width: 2px; height: 0;
+      background: rgba(255,255,255,.9);
+      border-radius: 1px;
+      z-index: 10;
+      transition: height .3s ease;
+      box-shadow: 0 0 8px rgba(255,255,255,.6);
+    }
+    .cola-fizz.active { height: 30px; }
+
+    /* shine/reflection on bottle */
+    .cola-shine {
+      position: absolute;
+      top: 18%; left: 20%;
+      width: 12px; height: 40%;
+      background: linear-gradient(to bottom, rgba(255,255,255,.25), transparent);
+      border-radius: 6px;
+      transform: rotate(-5deg);
+      pointer-events: none;
     }
 
     /* ── EXAMPLE 3: CORPORATE ── */
@@ -972,26 +1051,137 @@
 
     <!-- 2: Food -->
     <div class="pcard rv d1">
-      <div class="scene-food">
-        <div class="food-glow"></div>
-        <span class="spark" style="top:30%;left:38%;--tx:-18px;--ty:-28px;animation-delay:0s"></span>
-        <span class="spark" style="top:52%;left:62%;--tx:22px;--ty:-18px;animation-delay:.9s;background:#f43f5e;box-shadow:0 0 7px #f43f5e"></span>
-        <span class="spark" style="top:68%;left:42%;--tx:-14px;--ty:18px;animation-delay:1.8s;background:#a855f7;box-shadow:0 0 7px #a855f7"></span>
-        <span class="spark" style="top:24%;left:56%;--tx:18px;--ty:-22px;animation-delay:2.4s"></span>
-        <span class="spark" style="top:72%;left:64%;--tx:16px;--ty:13px;animation-delay:.4s;background:#10b981;box-shadow:0 0 7px #10b981"></span>
-        <span class="ingr">🍅</span>
-        <span class="ingr">🧀</span>
-        <span class="ingr">🥬</span>
-        <span class="ingr">🥓</span>
-        <span class="ingr">🫙</span>
-        <span class="ingr">🌶️</span>
-        <div class="burger" title="Passe o mouse!">
-          <span class="blayer">🍞</span>
-          <span class="blayer">🥩</span>
-          <span class="blayer">🧀</span>
-          <span class="blayer">🥬</span>
-          <span class="blayer">🍞</span>
+      <div class="scene-food" id="foodScene">
+
+        <!-- Burger photo layer -->
+        <div class="burger-photo-wrap">
+          <img
+            src="images/burger.jpg"
+            alt="Burger com fogo"
+            class="burger-photo"
+            onerror="this.parentElement.innerHTML='<div class=burger-photo-fallback>🍔</div>'"
+          />
         </div>
+        <div class="fire-overlay"></div>
+        <div class="fire-vignette"></div>
+
+        <!-- Fire canvas (mix-blend: screen) -->
+        <canvas class="fire-canvas" id="fireCanvas"></canvas>
+
+        <!-- Ember particles -->
+        <span class="ember" style="left:30%;bottom:0;--dx:-20px;--dur:2.8s;--del:0s"></span>
+        <span class="ember" style="left:42%;bottom:0;--dx:8px;--dur:3.2s;--del:.4s;width:3px;height:3px;background:#ffcc00;box-shadow:0 0 6px #ffcc00"></span>
+        <span class="ember" style="left:55%;bottom:0;--dx:-12px;--dur:2.4s;--del:.9s"></span>
+        <span class="ember" style="left:65%;bottom:0;--dx:18px;--dur:3.6s;--del:1.3s;width:5px;height:5px"></span>
+        <span class="ember" style="left:38%;bottom:0;--dx:24px;--dur:2.9s;--del:.6s;width:3px;height:3px;background:#ff5500;box-shadow:0 0 5px #ff5500"></span>
+        <span class="ember" style="left:50%;bottom:0;--dx:-30px;--dur:3.4s;--del:1.8s"></span>
+        <span class="ember" style="left:48%;bottom:0;--dx:14px;--dur:2.2s;--del:2.2s;width:3px;height:3px;background:#ffdd00"></span>
+
+        <!-- Coca-Cola slide-in -->
+        <div class="cola-scene" id="colaScene">
+          <div class="cola-bottle-wrap">
+            <div class="cola-cap" id="colaCap"></div>
+            <div class="cola-fizz" id="colaFizz"></div>
+
+            <!-- SVG Bottle -->
+            <svg width="88" height="200" viewBox="0 0 88 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Glass bottle shape (path) -->
+              <defs>
+                <!-- liquid gradient -->
+                <linearGradient id="liquidG" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"  stop-color="#1a0800" stop-opacity=".95"/>
+                  <stop offset="40%" stop-color="#3d1200" stop-opacity=".9"/>
+                  <stop offset="70%" stop-color="#5c1e00" stop-opacity=".85"/>
+                  <stop offset="100%" stop-color="#2a0e00" stop-opacity=".95"/>
+                </linearGradient>
+                <!-- glass gradient -->
+                <linearGradient id="glassG" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"  stop-color="#888" stop-opacity=".18"/>
+                  <stop offset="25%" stop-color="#ccc" stop-opacity=".08"/>
+                  <stop offset="55%" stop-color="#aaa" stop-opacity=".06"/>
+                  <stop offset="100%" stop-color="#666" stop-opacity=".20"/>
+                </linearGradient>
+                <!-- label gradient -->
+                <linearGradient id="labelG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"  stop-color="#cc0000"/>
+                  <stop offset="100%" stop-color="#990000"/>
+                </linearGradient>
+                <clipPath id="bottleClip">
+                  <path d="M33 8 Q33 4 44 4 Q55 4 55 8
+                           L55 28 Q66 34 72 50 L72 68
+                           Q78 72 80 82 L80 152
+                           Q80 168 76 174 L68 182
+                           Q60 188 44 188
+                           Q28 188 20 182 L12 174
+                           Q8 168 8 152 L8 82
+                           Q10 72 16 68 L16 50
+                           Q22 34 33 28 Z"/>
+                </clipPath>
+              </defs>
+
+              <!-- Bottle liquid fill (clipped to bottle shape) -->
+              <g clip-path="url(#bottleClip)">
+                <rect x="0" y="36" width="88" height="160" fill="url(#liquidG)"/>
+              </g>
+
+              <!-- Bottle outline / glass -->
+              <path d="M33 8 Q33 4 44 4 Q55 4 55 8
+                       L55 28 Q66 34 72 50 L72 68
+                       Q78 72 80 82 L80 152
+                       Q80 168 76 174 L68 182
+                       Q60 188 44 188
+                       Q28 188 20 182 L12 174
+                       Q8 168 8 152 L8 82
+                       Q10 72 16 68 L16 50
+                       Q22 34 33 28 Z"
+                    fill="url(#glassG)" stroke="rgba(255,255,255,.12)" stroke-width="1.5"/>
+
+              <!-- Dark band top (Sem Açúcar) -->
+              <rect x="28" y="72" width="32" height="14" rx="1" fill="#111"/>
+              <text x="44" y="82" text-anchor="middle" font-size="5.5" fill="white" font-family="Arial,sans-serif" font-weight="700" letter-spacing=".5">SEM AÇÚCAR</text>
+
+              <!-- Red label -->
+              <rect x="10" y="86" width="68" height="52" rx="2" fill="url(#labelG)"/>
+              <!-- White decorative wave on label -->
+              <path d="M10 104 Q44 97 78 104" stroke="rgba(255,255,255,.15)" stroke-width="6" fill="none"/>
+              <!-- Coca-Cola script text (approximated) -->
+              <text x="44" y="118" text-anchor="middle"
+                    font-size="17" fill="white"
+                    font-family="Georgia,'Times New Roman',serif"
+                    font-style="italic" font-weight="bold"
+                    letter-spacing="-.3">Coca-Cola</text>
+
+              <!-- Glass reflection left -->
+              <path d="M14 50 Q13 80 14 155" stroke="rgba(255,255,255,.18)" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <!-- Glass reflection right (small) -->
+              <path d="M72 68 Q73 90 72 130" stroke="rgba(255,255,255,.07)" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+              <!-- Bottom base -->
+              <ellipse cx="44" cy="188" rx="36" ry="5" fill="rgba(0,0,0,.6)"/>
+
+              <!-- Cap area -->
+              <path d="M33 8 Q33 4 44 4 Q55 4 55 8 L55 16 Q55 20 44 20 Q33 20 33 16 Z"
+                    fill="#1a1a1a" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+              <rect x="36" y="8" width="16" height="3" rx="1.5" fill="#333"/>
+            </svg>
+
+            <div class="cola-shine"></div>
+
+            <!-- Bubbles container -->
+            <div class="cola-bubbles" id="colaBubbles">
+              <span class="cbubble" style="width:5px;height:5px;--bx:-6px;--bdx:3px;--bd:2s;--bdelay:0s"></span>
+              <span class="cbubble" style="width:4px;height:4px;--bx:8px;--bdx:-2px;--bd:2.4s;--bdelay:.4s"></span>
+              <span class="cbubble" style="width:3px;height:3px;--bx:0px;--bdx:5px;--bd:1.8s;--bdelay:.8s"></span>
+              <span class="cbubble" style="width:6px;height:6px;--bx:-10px;--bdx:-4px;--bd:2.2s;--bdelay:1.2s"></span>
+              <span class="cbubble" style="width:3px;height:3px;--bx:12px;--bdx:6px;--bd:2.6s;--bdelay:.2s"></span>
+              <span class="cbubble" style="width:4px;height:4px;--bx:-4px;--bdx:-6px;--bd:2s;--bdelay:1.6s"></span>
+              <span class="cbubble" style="width:5px;height:5px;--bx:6px;--bdx:2px;--bd:3s;--bdelay:.6s"></span>
+              <span class="cbubble" style="width:3px;height:3px;--bx:-8px;--bdx:-3px;--bd:1.6s;--bdelay:1s"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menu + CTA -->
         <div class="food-menu">
           <div class="food-row"><span class="food-name">Smash Burger</span><span class="food-price">R$ 35</span></div>
           <div class="food-row"><span class="food-name">Double Cheese</span><span class="food-price">R$ 42</span></div>
@@ -1001,8 +1191,8 @@
       </div>
       <div class="pcard-info">
         <span class="pcard-tag" style="color:#f43f5e">Site de Alimentação</span>
-        <h3 class="pcard-title">Hamburgueria Premium</h3>
-        <p class="pcard-desc">Ingredientes animados, microinterações e menu interativo. Passe o mouse no hambúrguer para ver a magia acontecer.</p>
+        <h3 class="pcard-title">Hamburgueria Premium — com Fogo Real</h3>
+        <p class="pcard-desc">Foto real com fire canvas animado, Coca-Cola entrando e abrindo na tela. Experiências assim geram desejo imediato de compra.</p>
       </div>
     </div>
 
@@ -1396,6 +1586,126 @@ window.addEventListener('scroll',()=>{
   document.querySelector('.orb1').style.transform=`translate(${y*.04}px,${y*.03}px) scale(1)`;
   document.querySelector('.orb2').style.transform=`translate(${-y*.03}px,${-y*.04}px) scale(1)`;
 },{ passive:true });
+
+/* ── FIRE CANVAS ── */
+(()=>{
+  const scene = document.getElementById('foodScene');
+  const fc    = document.getElementById('fireCanvas');
+  if (!fc || !scene) return;
+
+  const ctx = fc.getContext('2d');
+  let W, H, active = false;
+
+  function resize() {
+    W = fc.width  = scene.offsetWidth;
+    H = fc.height = scene.offsetHeight;
+  }
+
+  class FireP {
+    constructor() { this.reset(); }
+    reset() {
+      // spawn at bottom center-ish (where burger is)
+      this.x  = W * (.32 + Math.random() * .36);
+      this.y  = H * (.55 + Math.random() * .3);
+      this.vx = (Math.random() - .5) * 1.4;
+      this.vy = -(Math.random() * 3 + 1.5);
+      this.size  = Math.random() * 14 + 6;
+      this.life  = 0;
+      this.maxLife = Math.random() * 45 + 30;
+      this.spin  = (Math.random() - .5) * .06;
+    }
+    update() {
+      this.x   += this.vx + this.spin;
+      this.y   += this.vy;
+      this.vy  *= .98;            // slight deceleration
+      this.vx  += (Math.random() - .5) * .3;
+      this.size *= .975;
+      this.life++;
+      if (this.life > this.maxLife || this.size < 1) this.reset();
+    }
+    draw() {
+      const t = this.life / this.maxLife;
+      // colour: 0→yellow, .4→orange, .8→dark red, 1→transparent
+      let r, g, b;
+      if (t < .3)       { r=255; g=Math.round(220-t*400); b=0; }
+      else if (t < .65) { r=255; g=Math.round(80-t*100);  b=0; }
+      else              { r=Math.round(255*(1-t)*3); g=0; b=0; }
+      const a = t < .15 ? t/.15 : t > .75 ? (1-t)/.25 : 1;
+      const grd = ctx.createRadialGradient(this.x,this.y,0, this.x,this.y,this.size);
+      grd.addColorStop(0,   `rgba(${r},${g},${b},${(a*.9).toFixed(2)})`);
+      grd.addColorStop(.45, `rgba(${r},${Math.max(0,g-40)},0,${(a*.55).toFixed(2)})`);
+      grd.addColorStop(1,   `rgba(${Math.max(0,r-80)},0,0,0)`);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.fillStyle = grd;
+      ctx.fill();
+    }
+  }
+
+  let particles = [];
+
+  function initFire() {
+    resize();
+    particles = Array.from({length: 55}, () => {
+      const p = new FireP();
+      // scatter life so not all start from 0
+      p.life = Math.floor(Math.random() * p.maxLife);
+      return p;
+    });
+  }
+
+  function frameFire() {
+    if (!active) { requestAnimationFrame(frameFire); return; }
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(frameFire);
+  }
+
+  // Start when food section is visible
+  const fireIO = new IntersectionObserver(en => {
+    if (!en[0].isIntersecting) return;
+    active = true;
+    initFire();
+    frameFire();
+    fireIO.disconnect();
+  }, { threshold: .2 });
+  fireIO.observe(scene);
+
+  window.addEventListener('resize', () => { if(active) resize(); }, { passive:true });
+})();
+
+/* ── COLA ANIMATION ── */
+(()=>{
+  const scene     = document.getElementById('foodScene');
+  const colaScene = document.getElementById('colaScene');
+  const colaCap   = document.getElementById('colaCap');
+  const colaFizz  = document.getElementById('colaFizz');
+  if (!scene || !colaScene) return;
+
+  let triggered = false;
+
+  const colaIO = new IntersectionObserver(en => {
+    if (!en[0].isIntersecting || triggered) return;
+    triggered = true;
+    colaIO.disconnect();
+
+    // 1. Slide bottle in
+    colaScene.classList.add('in');
+
+    // 2. After bottle settles → cap pops off
+    setTimeout(() => {
+      colaCap && colaCap.classList.add('pop');
+
+      // 3. Fizz spray appears
+      colaFizz && colaFizz.classList.add('active');
+      setTimeout(() => { colaFizz && colaFizz.classList.remove('active'); }, 600);
+
+    }, 1100);
+
+  }, { threshold: .3 });
+
+  colaIO.observe(scene);
+})();
 </script>
 </body>
 </html>
