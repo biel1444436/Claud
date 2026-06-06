@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casa do Açaí – Pindamonhangaba | Araretama</title>
+  <meta name="description" content="O melhor açaí de Pindamonhangaba, localizado no Araretama. Açaí premium, ingredientes frescos, delivery rápido. Peça agora pelo WhatsApp!" />
+  <meta property="og:title" content="Casa do Açaí – O Melhor Açaí de Pindamonhangaba" />
+  <meta property="og:description" content="Açaí premium no Araretama. Monte do seu jeito, peça pelo WhatsApp ou venha nos visitar!" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --purple-dark: #451952;
+      --wine: #662549;
+      --pink: #AE445A;
+      --orange: #F39F5A;
+      --white: #ffffff;
+      --gray-light: #f8f6fa;
+      --gray-text: #555;
+      --shadow: 0 4px 24px rgba(69,25,82,0.12);
+      --radius: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Poppins', sans-serif; color: #333; background: #fff; }
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+
+    /* NAVBAR */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+      background: rgba(69,25,82,0.96);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%; height: 70px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+    }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--orange); font-weight: 800; letter-spacing: 1px; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,0.88); font-size: 0.875rem; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--orange); }
+    .nav-cta {
+      background: var(--orange); color: var(--purple-dark);
+      padding: 0.5rem 1.25rem; border-radius: 30px;
+      font-weight: 700; font-size: 0.85rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+    .nav-cta:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(243,159,90,0.4); }
+    .nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+    .nav-hamburger span { width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: 0.3s; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, rgba(69,25,82,0.88) 0%, rgba(102,37,73,0.82) 100%),
+        url('https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=1600&q=80') center/cover no-repeat;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 100px 5% 60px;
+    }
+    .hero-content { max-width: 760px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(243,159,90,0.18); border: 1px solid rgba(243,159,90,0.4);
+      color: var(--orange); padding: 0.4rem 1.1rem; border-radius: 30px;
+      font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; letter-spacing: 0.5px;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      color: #fff; line-height: 1.15; margin-bottom: 1.2rem;
+    }
+    .hero-title span { color: var(--orange); }
+    .hero-sub { color: rgba(255,255,255,0.85); font-size: 1.05rem; line-height: 1.7; margin-bottom: 2.2rem; max-width: 580px; margin-left: auto; margin-right: auto; }
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem; }
+    .btn-primary {
+      background: var(--orange); color: var(--purple-dark);
+      padding: 0.9rem 2rem; border-radius: 50px; font-weight: 700; font-size: 1rem;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(243,159,90,0.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(243,159,90,0.5); }
+    .btn-outline {
+      border: 2px solid rgba(255,255,255,0.7); color: #fff;
+      padding: 0.9rem 2rem; border-radius: 50px; font-weight: 600; font-size: 1rem;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.12); border-color: #fff; }
+    .hero-trust { display: flex; gap: 2.5rem; justify-content: center; flex-wrap: wrap; }
+    .trust-item { display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.85); font-size: 0.85rem; font-weight: 500; }
+    .trust-item i { color: var(--orange); font-size: 1.1rem; }
+
+    /* SECTIONS GENERAL */
+    section { padding: 90px 5%; }
+    .section-tag {
+      display: inline-block; background: rgba(174,68,90,0.1); color: var(--pink);
+      padding: 0.3rem 1rem; border-radius: 30px; font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.8rem;
+    }
+    .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4vw, 2.8rem); color: var(--purple-dark); margin-bottom: 0.8rem; line-height: 1.2; }
+    .section-sub { color: var(--gray-text); font-size: 1rem; line-height: 1.7; max-width: 560px; }
+    .section-header { text-align: center; margin-bottom: 3.5rem; }
+    .section-header .section-sub { margin: 0 auto; }
+
+    /* SOBRE */
+    #sobre { background: var(--gray-light); }
+    .sobre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .sobre-destaques { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.8rem 0; }
+    .destaque-item { display: flex; align-items: flex-start; gap: 0.75rem; background: #fff; padding: 1rem; border-radius: var(--radius); box-shadow: var(--shadow); }
+    .destaque-item i { color: var(--pink); font-size: 1.3rem; margin-top: 2px; flex-shrink: 0; }
+    .destaque-item h4 { font-size: 0.9rem; font-weight: 700; color: var(--purple-dark); margin-bottom: 0.15rem; }
+    .destaque-item p { font-size: 0.78rem; color: var(--gray-text); line-height: 1.5; }
+    .sobre-fotos { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 12px; }
+    .sobre-foto-vertical { grid-row: 1 / 3; border-radius: var(--radius); overflow: hidden; height: 420px; }
+    .sobre-foto-vertical img { width: 100%; height: 100%; object-fit: cover; }
+    .sobre-foto-sq { border-radius: var(--radius); overflow: hidden; height: 200px; }
+    .sobre-foto-sq img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* CARDÁPIO */
+    #cardapio { background: #fff; }
+    .menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.8rem; }
+    .menu-card {
+      background: #fff; border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow); transition: transform 0.3s, box-shadow 0.3s;
+      display: flex; flex-direction: column;
+    }
+    .menu-card:hover { transform: translateY(-6px); box-shadow: 0 12px 36px rgba(69,25,82,0.18); }
+    .menu-card-img { position: relative; height: 240px; overflow: hidden; }
+    .menu-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .menu-card:hover .menu-card-img img { transform: scale(1.05); }
+    .menu-tag {
+      position: absolute; top: 14px; left: 14px;
+      background: var(--orange); color: var(--purple-dark);
+      padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+    }
+    .menu-card-body { padding: 1.4rem; display: flex; flex-direction: column; flex: 1; }
+    .menu-card-body h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--purple-dark); margin-bottom: 0.5rem; }
+    .menu-card-body p { color: var(--gray-text); font-size: 0.85rem; line-height: 1.6; flex: 1; margin-bottom: 1rem; }
+    .menu-price { font-size: 1.2rem; font-weight: 700; color: var(--pink); margin-bottom: 1rem; }
+    .btn-menu {
+      background: var(--orange); color: var(--purple-dark);
+      padding: 0.65rem 1.25rem; border-radius: 50px; font-weight: 700; font-size: 0.85rem;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      transition: transform 0.2s, box-shadow 0.2s; text-align: center; justify-content: center;
+      box-shadow: 0 2px 10px rgba(243,159,90,0.3);
+    }
+    .btn-menu:hover { transform: scale(1.04); box-shadow: 0 4px 16px rgba(243,159,90,0.45); }
+
+    /* MONTE DO SEU JEITO */
+    #monte {
+      background: linear-gradient(135deg, var(--purple-dark) 0%, var(--wine) 100%);
+      text-align: center;
+    }
+    #monte .section-tag { background: rgba(243,159,90,0.2); color: var(--orange); }
+    #monte .section-title { color: #fff; }
+    #monte .section-sub { color: rgba(255,255,255,0.8); margin: 0 auto; }
+    .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; margin: 3rem 0 2.5rem; }
+    .step-card {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius); padding: 2rem 1.4rem;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .step-card:hover { background: rgba(255,255,255,0.13); transform: translateY(-4px); }
+    .step-num { font-size: 0.75rem; font-weight: 700; color: var(--orange); letter-spacing: 2px; margin-bottom: 0.8rem; opacity: 0.8; }
+    .step-icon { font-size: 2.2rem; color: var(--orange); margin-bottom: 1rem; }
+    .step-card h3 { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.6rem; }
+    .step-card p { color: rgba(255,255,255,0.72); font-size: 0.82rem; line-height: 1.6; }
+    .monte-cta { margin-top: 1.5rem; }
+    .btn-monte {
+      background: var(--orange); color: var(--purple-dark);
+      padding: 1rem 2.5rem; border-radius: 50px; font-weight: 700; font-size: 1rem;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(243,159,90,0.35);
+    }
+    .btn-monte:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(243,159,90,0.5); }
+
+    /* DEPOIMENTOS */
+    #depoimentos { background: var(--gray-light); }
+    .dep-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+    .dep-card {
+      background: #fff; border-radius: var(--radius); padding: 1.6rem;
+      box-shadow: var(--shadow); position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .dep-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px rgba(69,25,82,0.15); }
+    .dep-quote { color: var(--pink); font-size: 2.5rem; line-height: 1; margin-bottom: 0.5rem; font-family: Georgia, serif; }
+    .dep-text { color: var(--gray-text); font-size: 0.85rem; line-height: 1.7; margin-bottom: 1.2rem; font-style: italic; }
+    .dep-stars { color: var(--orange); font-size: 0.85rem; margin-bottom: 1rem; letter-spacing: 2px; }
+    .dep-author { display: flex; align-items: center; gap: 0.75rem; }
+    .dep-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 3px solid var(--orange); flex-shrink: 0; }
+    .dep-name { font-weight: 700; font-size: 0.9rem; color: var(--purple-dark); }
+    .dep-city { font-size: 0.75rem; color: #999; }
+
+    /* LOCALIZAÇÃO */
+    #localizacao { background: #fff; }
+    .loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .loc-info-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem; }
+    .loc-info-item i { color: var(--pink); font-size: 1.3rem; margin-top: 2px; width: 24px; text-align: center; flex-shrink: 0; }
+    .loc-info-item h4 { font-size: 0.9rem; font-weight: 700; color: var(--purple-dark); margin-bottom: 0.25rem; }
+    .loc-info-item p, .loc-info-item a { font-size: 0.875rem; color: var(--gray-text); line-height: 1.6; }
+    .loc-info-item a:hover { color: var(--pink); }
+    .loc-btns { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 2rem; }
+    .btn-loc {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      padding: 0.8rem 1.5rem; border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+      transition: transform 0.2s, box-shadow 0.2s; width: fit-content;
+    }
+    .btn-loc-map { background: var(--purple-dark); color: #fff; }
+    .btn-loc-map:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(69,25,82,0.3); }
+    .btn-loc-wa { background: #25D366; color: #fff; }
+    .btn-loc-wa:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,211,102,0.35); }
+    .map-wrap { border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .map-wrap iframe { width: 100%; height: 420px; border: 0; display: block; }
+
+    /* CTA FINAL */
+    #cta-final {
+      background: linear-gradient(135deg, var(--purple-dark) 0%, var(--pink) 100%);
+      text-align: center; padding: 100px 5%;
+    }
+    .cta-emoji { font-size: 3.5rem; margin-bottom: 1rem; display: block; }
+    #cta-final .section-title { color: #fff; font-size: clamp(2rem, 5vw, 3.2rem); margin-bottom: 1rem; }
+    #cta-final .section-sub { color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto 1.5rem; font-size: 1.05rem; }
+    .cta-urgencia { color: var(--orange); font-weight: 700; font-size: 0.9rem; margin-bottom: 2rem; letter-spacing: 0.5px; }
+    .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .btn-cta-main {
+      background: var(--orange); color: var(--purple-dark);
+      padding: 1.1rem 2.5rem; border-radius: 50px; font-weight: 700; font-size: 1.05rem;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      box-shadow: 0 4px 24px rgba(243,159,90,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-cta-main:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(243,159,90,0.55); }
+    .btn-cta-sec {
+      border: 2px solid rgba(255,255,255,0.7); color: #fff;
+      padding: 1.1rem 2.5rem; border-radius: 50px; font-weight: 600; font-size: 1rem;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .btn-cta-sec:hover { background: rgba(255,255,255,0.12); }
+    .cta-proof { color: rgba(255,255,255,0.85); font-size: 0.88rem; }
+    .cta-proof i { color: var(--orange); }
+
+    /* FOOTER */
+    footer { background: var(--purple-dark); padding: 60px 5% 30px; }
+    .footer-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+    .footer-brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--orange); font-weight: 800; margin-bottom: 0.8rem; }
+    .footer-brand-text { color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.7; margin-bottom: 1.4rem; }
+    .footer-socials { display: flex; gap: 0.8rem; }
+    .social-link {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.8);
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .social-link:hover { background: var(--orange); color: var(--purple-dark); border-color: var(--orange); }
+    .footer-title { color: var(--orange); font-size: 0.85rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 1.2rem; }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .footer-links a { color: rgba(255,255,255,0.7); font-size: 0.85rem; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--orange); }
+    .footer-contact-item { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 0.9rem; }
+    .footer-contact-item i { color: var(--orange); font-size: 1rem; margin-top: 2px; flex-shrink: 0; }
+    .footer-contact-item p, .footer-contact-item a { color: rgba(255,255,255,0.75); font-size: 0.83rem; line-height: 1.5; }
+    .footer-contact-item a:hover { color: var(--orange); }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.4rem; text-align: center; }
+    .footer-bottom p { color: rgba(255,255,255,0.45); font-size: 0.78rem; }
+
+    /* WHATSAPP FLOAT */
+    .whatsapp-float {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #25D366; color: #fff;
+      width: 62px; height: 62px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; z-index: 9999;
+      box-shadow: 0 4px 24px rgba(37,211,102,0.5);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .whatsapp-float:hover { transform: scale(1.12); box-shadow: 0 6px 32px rgba(37,211,102,0.65); }
+
+    /* REVEAL ANIMATION */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .menu-grid { grid-template-columns: repeat(2, 1fr); }
+      .dep-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .nav-links, .nav-cta { display: none; }
+      .nav-hamburger { display: flex; }
+      .nav-links.open { display: flex; flex-direction: column; gap: 1rem; position: absolute; top: 70px; left: 0; right: 0; background: var(--purple-dark); padding: 1.5rem 5%; }
+      .sobre-grid, .loc-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .sobre-fotos { height: 320px; }
+      .sobre-foto-vertical { height: 100%; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .dep-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .hero-trust { flex-direction: column; gap: 0.8rem; align-items: center; }
+    }
+    @media (max-width: 480px) {
+      section { padding: 70px 4%; }
+      .dep-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <div class="nav-logo">🍇 Casa do Açaí</div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#cardapio">Cardápio</a></li>
+      <li><a href="#monte">Monte o Seu</a></li>
+      <li><a href="#depoimentos">Clientes</a></li>
+      <li><a href="#localizacao">Localização</a></li>
+    </ul>
+    <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="nav-cta">
+      <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+    </a>
+    <div class="nav-hamburger" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-content reveal">
+      <div class="hero-badge"><i class="fa-solid fa-star"></i> Referência em Açaí em Pindamonhangaba</div>
+      <h1 class="hero-title">O Melhor Açaí da Cidade,<br><span>Do Jeito que Você Merece.</span></h1>
+      <p class="hero-sub">Feito com açaí premium, ingredientes frescos e muito amor. Monte do seu jeito, peça pelo WhatsApp ou nos encontre no Araretama.</p>
+      <div class="hero-btns">
+        <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-primary">
+          <i class="fa-brands fa-whatsapp"></i> Pedir pelo WhatsApp
+        </a>
+        <a href="#cardapio" class="btn-outline">
+          <i class="fa-solid fa-book-open"></i> Ver Cardápio
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item"><i class="fa-solid fa-trophy"></i> Mais de 10 mil clientes satisfeitos</div>
+        <div class="trust-item"><i class="fa-solid fa-seedling"></i> Açaí 100% natural e premium</div>
+        <div class="trust-item"><i class="fa-solid fa-rocket"></i> Entrega rápida no Araretama</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOBRE -->
+  <section id="sobre">
+    <div class="sobre-grid">
+      <div class="reveal">
+        <span class="section-tag">Nossa História</span>
+        <h2 class="section-title">Nascemos do amor pelo açaí e pela comunidade do Araretama</h2>
+        <p style="color:var(--gray-text);line-height:1.8;font-size:0.95rem;margin-bottom:0.9rem;">
+          A Casa do Açaí nasceu do desejo de levar o verdadeiro sabor do açaí amazônico para as famílias de Pindamonhangaba. Localizada no coração do Araretama, nossa açaiteria é muito mais do que um ponto de alimentação — é um lugar de encontro, de prazer e de momentos especiais.
+        </p>
+        <p style="color:var(--gray-text);line-height:1.8;font-size:0.95rem;margin-bottom:0.9rem;">
+          Trabalhamos com açaí selecionado de origem controlada, frutas frescas e complementos de qualidade. Cada copo é preparado com cuidado e carinho, porque acreditamos que você merece o melhor.
+        </p>
+        <p style="color:var(--gray-text);line-height:1.8;font-size:0.95rem;">
+          Aqui, você monta do seu jeito, no tamanho que quiser, com os complementos que preferir. Venha nos visitar ou peça pelo delivery — estamos prontos para te atender!
+        </p>
+        <div class="sobre-destaques">
+          <div class="destaque-item">
+            <i class="fa-solid fa-wine-glass-empty"></i>
+            <div><h4>Açaí Premium</h4><p>Origem selecionada, batido na hora</p></div>
+          </div>
+          <div class="destaque-item">
+            <i class="fa-solid fa-leaf"></i>
+            <div><h4>100% Natural</h4><p>Sem conservantes, sem artificiais</p></div>
+          </div>
+          <div class="destaque-item">
+            <i class="fa-solid fa-motorcycle"></i>
+            <div><h4>Entrega Rápida</h4><p>Araretama e região</p></div>
+          </div>
+          <div class="destaque-item">
+            <i class="fa-solid fa-heart"></i>
+            <div><h4>Feito com Amor</h4><p>Cada detalhe pensado para você</p></div>
+          </div>
+        </div>
+        <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-primary" style="margin-top:0.5rem;">
+          <i class="fa-brands fa-whatsapp"></i> Fale Conosco
+        </a>
+      </div>
+      <div class="sobre-fotos reveal">
+        <div class="sobre-foto-vertical">
+          <img src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&q=80" alt="Açaí na tigela com granola e frutas frescas" loading="lazy" />
+        </div>
+        <div class="sobre-foto-sq">
+          <img src="https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400&q=80" alt="Frutas frescas selecionadas para o açaí" loading="lazy" />
+        </div>
+        <div class="sobre-foto-sq">
+          <img src="https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&q=80" alt="Ambiente acolhedor da açaiteria" loading="lazy" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDÁPIO -->
+  <section id="cardapio">
+    <div class="section-header reveal">
+      <span class="section-tag">Nosso Cardápio</span>
+      <h2 class="section-title">Escolha o seu favorito</h2>
+      <p class="section-sub">Opções para todos os gostos — do clássico ao gourmet. Tudo preparado na hora, com ingredientes frescos.</p>
+    </div>
+    <div class="menu-grid">
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=600&q=80" alt="Açaí Tradicional com granola" loading="lazy" />
+          <span class="menu-tag">Clássico</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Açaí Tradicional</h3>
+          <p>Puro, cremoso e cheio de energia. O clássico que nunca decepciona, batido na hora com açaí 100% natural e granola crocante.</p>
+          <div class="menu-price">A partir de R$ 14,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1618512496248-a4dd9b6fba8c?w=600&q=80" alt="Açaí Gourmet com frutas e calda" loading="lazy" />
+          <span class="menu-tag">Gourmet</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Açaí Gourmet</h3>
+          <p>A experiência completa: açaí premium com morango, banana, leite Ninho e calda de chocolate. Puro prazer em cada colherada.</p>
+          <div class="menu-price">A partir de R$ 22,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?w=600&q=80" alt="Bowl Fit com granola e chia" loading="lazy" />
+          <span class="menu-tag">Fit</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Bowl Fit</h3>
+          <p>Para quem cuida da saúde sem abrir mão do sabor. Açaí com granola sem açúcar, chia, banana e mel. Energia pura para o seu treino.</p>
+          <div class="menu-price">A partir de R$ 19,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?w=600&q=80" alt="Combo Família com múltiplas tigelas de açaí" loading="lazy" />
+          <span class="menu-tag">Família</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Combo Família</h3>
+          <p>Feito para compartilhar! 2 tigelas grandes com até 4 complementos cada. A escolha perfeita para um lanche especial em família.</p>
+          <div class="menu-price">A partir de R$ 44,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1546548970-71785318a17b?w=600&q=80" alt="Açaí no copo com canudo" loading="lazy" />
+          <span class="menu-tag">Prático</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Açaí no Copo</h3>
+          <p>Para quem prefere a praticidade. Açaí cremoso com granola e frutas. Ideal para levar e consumir em qualquer lugar, a qualquer hora.</p>
+          <div class="menu-price">A partir de R$ 12,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+      <div class="menu-card reveal">
+        <div class="menu-card-img">
+          <img src="https://images.unsplash.com/photo-1560180474-e8563fd75bab?w=600&q=80" alt="Açaí Especial da Casa com decoração premium" loading="lazy" />
+          <span class="menu-tag">Exclusivo</span>
+        </div>
+        <div class="menu-card-body">
+          <h3>Especial da Casa</h3>
+          <p>Nossa criação exclusiva: açaí premium com mix de frutas tropicais, coco ralado, paçoca e calda de maracujá. Uma experiência única!</p>
+          <div class="menu-price">A partir de R$ 26,90</div>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-menu">
+            <i class="fa-brands fa-whatsapp"></i> Pedir Agora
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MONTE DO SEU JEITO -->
+  <section id="monte">
+    <div class="section-header reveal">
+      <span class="section-tag">Personalização</span>
+      <h2 class="section-title">Monte do Seu Jeito</h2>
+      <p class="section-sub">Mais de 30 combinações possíveis. O açaí perfeito é o que você criar — simples assim.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card reveal">
+        <div class="step-num">PASSO 01</div>
+        <div class="step-icon"><i class="fa-solid fa-ruler-combined"></i></div>
+        <h3>Escolha o Tamanho</h3>
+        <p>Pequeno, médio, grande ou família. Tem opção para todos os apetites e ocasiões. Nunca menos do que você precisa!</p>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-num">PASSO 02</div>
+        <div class="step-icon"><i class="fa-solid fa-apple-whole"></i></div>
+        <h3>Escolha as Frutas</h3>
+        <p>Morango, banana, manga, maracujá, kiwi e muito mais. Frutas frescas selecionadas todo dia para garantir o máximo de sabor.</p>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-num">PASSO 03</div>
+        <div class="step-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <h3>Adicione os Toppings</h3>
+        <p>Granola, leite em pó, paçoca, castanhas, coco ralado, Nutella, confetes e outros. Liberdade total para criar sua combinação!</p>
+      </div>
+      <div class="step-card reveal">
+        <div class="step-num">PASSO 04</div>
+        <div class="step-icon"><i class="fa-solid fa-droplet"></i></div>
+        <h3>Finalize com a Calda</h3>
+        <p>Mel, chocolate, morango, maracujá ou leite condensado. O toque final que só você escolhe para completar a perfeição.</p>
+      </div>
+    </div>
+    <div class="monte-cta reveal">
+      <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-monte">
+        <i class="fa-brands fa-whatsapp"></i> Monte o Seu Agora
+      </a>
+    </div>
+  </section>
+
+  <!-- DEPOIMENTOS -->
+  <section id="depoimentos">
+    <div class="section-header reveal">
+      <span class="section-tag">Depoimentos</span>
+      <h2 class="section-title">O que dizem nossos clientes</h2>
+      <p class="section-sub">Mais de 10 mil pessoas já escolheram a Casa do Açaí. Veja o que elas falam sobre a experiência!</p>
+    </div>
+    <div class="dep-grid">
+
+      <div class="dep-card reveal">
+        <div class="dep-quote">"</div>
+        <p class="dep-text">Melhor açaí que já comi em Pindamonhangaba! O açaí gourmet então… apaixonei! Entrega super rápida e o copo chegou fresquinho. Com certeza vou pedir sempre!</p>
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-author">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" alt="Ana Paula S." class="dep-avatar" loading="lazy" />
+          <div><div class="dep-name">Ana Paula S.</div><div class="dep-city">Pindamonhangaba, SP</div></div>
+        </div>
+      </div>
+
+      <div class="dep-card reveal">
+        <div class="dep-quote">"</div>
+        <p class="dep-text">Frequento a Casa do Açaí toda semana depois do treino. O Bowl Fit é perfeito — saudável, gostoso e com preço justo. Recomendo demais para quem pratica esporte!</p>
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-author">
+          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80" alt="Rafael M." class="dep-avatar" loading="lazy" />
+          <div><div class="dep-name">Rafael M.</div><div class="dep-city">Araretama, Pindamonhangaba</div></div>
+        </div>
+      </div>
+
+      <div class="dep-card reveal">
+        <div class="dep-quote">"</div>
+        <p class="dep-text">Fomos com as crianças e adoramos! Tem opção para todo mundo, ambiente acolhedor e atendimento nota 10. O Combo Família é perfeito para um domingo especial em família!</p>
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-author">
+          <img src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=100&q=80" alt="Família Oliveira" class="dep-avatar" loading="lazy" />
+          <div><div class="dep-name">Família Oliveira</div><div class="dep-city">Pindamonhangaba, SP</div></div>
+        </div>
+      </div>
+
+      <div class="dep-card reveal">
+        <div class="dep-quote">"</div>
+        <p class="dep-text">Pedi pelo WhatsApp e em menos de 30 minutos chegou aqui em casa, fresquinho e bem embalado. A Casa do Açaí virou minha opção favorita de delivery no Araretama!</p>
+        <div class="dep-stars">★★★★★</div>
+        <div class="dep-author">
+          <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80" alt="Juliana C." class="dep-avatar" loading="lazy" />
+          <div><div class="dep-name">Juliana C.</div><div class="dep-city">Araretama, Pindamonhangaba</div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LOCALIZAÇÃO -->
+  <section id="localizacao">
+    <div class="loc-grid">
+      <div class="reveal">
+        <span class="section-tag">Onde Estamos</span>
+        <h2 class="section-title">Venha nos Visitar</h2>
+        <p class="section-sub" style="margin-bottom:2rem;">Estamos no coração do Araretama, esperando por você com muito açaí e ainda mais carinho!</p>
+        <div class="loc-info-item">
+          <i class="fa-solid fa-location-dot"></i>
+          <div><h4>Endereço</h4><p>Araretama, Pindamonhangaba — SP</p></div>
+        </div>
+        <div class="loc-info-item">
+          <i class="fa-solid fa-clock"></i>
+          <div><h4>Horário de Funcionamento</h4><p>Segunda a Sábado: 13h às 22h<br>Domingo: 13h às 21h</p></div>
+        </div>
+        <div class="loc-info-item">
+          <i class="fa-brands fa-whatsapp"></i>
+          <div><h4>WhatsApp</h4><a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer">(12) 98899-0598</a></div>
+        </div>
+        <div class="loc-info-item">
+          <i class="fa-brands fa-instagram"></i>
+          <div><h4>Instagram</h4><p>@casadoacai.pinda</p></div>
+        </div>
+        <div class="loc-info-item">
+          <i class="fa-solid fa-motorcycle"></i>
+          <div><h4>Delivery</h4><p>Atendemos Araretama e regiões próximas de Pindamonhangaba</p></div>
+        </div>
+        <div class="loc-btns">
+          <a href="https://www.google.com/maps/search/Araretama+Pindamonhangaba+SP" target="_blank" rel="noopener noreferrer" class="btn-loc btn-loc-map">
+            <i class="fa-solid fa-location-dot"></i> Como Chegar
+          </a>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-loc btn-loc-wa">
+            <i class="fa-brands fa-whatsapp"></i> Falar pelo WhatsApp
+          </a>
+        </div>
+      </div>
+      <div class="map-wrap reveal">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d58668.56!2d-45.4897!3d-22.9285!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ccbfd6a6b21e6f%3A0x8c73abf71ded5a49!2sPindamonhangaba%2C%20SP!5e0!3m2!1spt-BR!2sbr!4v1717680000000"
+          title="Localização da Casa do Açaí em Pindamonhangaba"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section id="cta-final">
+    <div class="reveal">
+      <span class="cta-emoji">🍇</span>
+      <h2 class="section-title">Pronto para o Melhor Açaí<br>da sua Vida?</h2>
+      <p class="section-sub">Não espere mais. Monte seu açaí do jeito que você gosta, peça pelo WhatsApp e receba em casa — ou venha nos visitar no Araretama. A Casa do Açaí está te esperando!</p>
+      <p class="cta-urgencia">⚡ Atendimento rápido &nbsp;·&nbsp; Entrega ágil &nbsp;·&nbsp; Qualidade garantida</p>
+      <div class="cta-btns">
+        <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="btn-cta-main">
+          <i class="fa-brands fa-whatsapp"></i> Pedir Agora pelo WhatsApp
+        </a>
+        <a href="#cardapio" class="btn-cta-sec">
+          <i class="fa-solid fa-book-open"></i> Ver Cardápio Completo
+        </a>
+      </div>
+      <p class="cta-proof"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>&nbsp; Mais de 10.000 clientes satisfeitos em Pindamonhangaba</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">🍇 Casa do Açaí</div>
+        <p class="footer-brand-text">O verdadeiro sabor do açaí amazônico em Pindamonhangaba. Qualidade, carinho e sabor em cada copo.</p>
+        <div class="footer-socials">
+          <a href="#" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-title">Links Rápidos</div>
+        <ul class="footer-links">
+          <li><a href="#hero">Início</a></li>
+          <li><a href="#sobre">Sobre Nós</a></li>
+          <li><a href="#cardapio">Cardápio</a></li>
+          <li><a href="#monte">Monte seu Açaí</a></li>
+          <li><a href="#depoimentos">Depoimentos</a></li>
+          <li><a href="#localizacao">Localização</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-title">Contato</div>
+        <div class="footer-contact-item">
+          <i class="fa-brands fa-whatsapp"></i>
+          <div><a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer">(12) 98899-0598</a></div>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fa-solid fa-location-dot"></i>
+          <p>Araretama, Pindamonhangaba — SP</p>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fa-solid fa-clock"></i>
+          <p>Seg–Sáb: 13h–22h<br>Dom: 13h–21h</p>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fa-brands fa-instagram"></i>
+          <p>@casadoacai.pinda</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 Casa do Açaí · Todos os direitos reservados · Pindamonhangaba, SP</p>
+    </div>
+  </footer>
+
+  <!-- WHATSAPP FLOAT -->
+  <a href="https://wa.me/5512988990598" target="_blank" rel="noopener noreferrer" class="whatsapp-float" aria-label="Falar pelo WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+  </a>
+
+  <script>
+    function toggleNav() {
+      document.getElementById('navLinks').classList.toggle('open');
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
