@@ -11,7 +11,7 @@ Você vai precisar de 3 segredos:
 | Variável | Onde pegar |
 |---|---|
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google Cloud Console (passo 2) |
-| `GROQ_API_KEY` | https://console.groq.com/keys |
+| `GEMINI_API_KEY` | https://aistudio.google.com/apikey |
 | `SECRET_KEY` | gere com `python -c "import secrets;print(secrets.token_hex(32))"` (o Render gera sozinho) |
 
 ---
@@ -46,7 +46,7 @@ pip install -r requirements.txt
 
 # Copie .env.example para .env e preencha as chaves
 # Depois carregue as variáveis e rode:
-$env:GOOGLE_CLIENT_ID="..."; $env:GOOGLE_CLIENT_SECRET="..."; $env:GROQ_API_KEY="..."
+$env:GOOGLE_CLIENT_ID="..."; $env:GOOGLE_CLIENT_SECRET="..."; $env:GEMINI_API_KEY="..."
 python app.py
 ```
 
@@ -65,7 +65,7 @@ O Render é grátis para começar e já vem com HTTPS.
      - Build: `pip install -r requirements.txt`
      - Start: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
 3. Em **Environment**, cadastre os segredos:
-   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GROQ_API_KEY`.
+   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GEMINI_API_KEY`.
    (`SECRET_KEY`, `DB_PATH`, `SESSION_COOKIE_SECURE` etc. já vêm do `render.yaml`.)
 4. Deploy. Anote a URL final (ex.: `https://orgeral.onrender.com`).
 5. **Volte ao Google Cloud** e adicione `https://orgeral.onrender.com/callback`

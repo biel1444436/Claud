@@ -19,7 +19,8 @@ from urllib.parse import urlparse
 from flask import Flask, request, jsonify, render_template, g, session, redirect, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
-from groq import Groq
+from google import genai
+from google.genai import types
 
 import gcal
 import db as database
@@ -71,6 +72,9 @@ UPLOAD_WINDOW = int(os.environ.get("UPLOAD_WINDOW", "600"))  # segundos
 _CHAT_HITS: dict[int, list[float]] = {}
 CHAT_LIMIT  = int(os.environ.get("CHAT_LIMIT", "40"))
 CHAT_WINDOW = int(os.environ.get("CHAT_WINDOW", "600"))  # segundos
+
+# Modelo do Google Gemini (nível gratuito do Google AI Studio).
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 oauth = OAuth(app)
@@ -450,11 +454,11 @@ def upload_file():
 
     if not text.strip():
         return jsonify({"error": "Não foi possível extrair texto do arquivo"}), 400
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"error": "GROQ_API_KEY não configurada."}), 500
+    if not os.environ.get("GEMINI_API_KEY"):
+        return jsonify({"error": "GEMINI_API_KEY não configurada."}), 500
 
     try:
-        tasks = parse_tasks_with_groq(text)
+        tasks = parse_tasks_with_ai(text)
     except Exception as e:
         log.exception("Erro ao processar com IA: %s", e)
         return jsonify({"error": f"Erro ao processar com IA: {str(e)}"}), 500
@@ -513,43 +517,36 @@ def extract_text_from_file(file) -> str:
     return content.decode("utf-8", errors="ignore")
 
 
-def _groq_complete(client, prompt: str, max_retries: int = 6) -> str:
-    """Chama a Groq com retry/backoff em caso de 429 (rate limit)."""
-    delay = 4.0
-    last_err = None
+def _gemini_complete(prompt: str, max_retries: int = 6) -> str:
+    """Chama o Gemini pedindo JSON, com retry/backoff em caso de 429 (quota)."""
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    delay, last_err = 4.0, None
     for attempt in range(max_retries):
         try:
-            resp = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,
-                max_tokens=4000,
-                response_format={"type": "json_object"},
+            resp = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    max_output_tokens=4000,
+                    response_mime_type="application/json",
+                ),
             )
-            return resp.choices[0].message.content
+            return resp.text
         except Exception as e:
             last_err = e
-            status = getattr(e, "status_code", None)
-            is_rate = status == 429 or "429" in str(e) or "rate" in str(e).lower()
+            msg = str(e).lower()
+            is_rate = "429" in msg or "resource_exhausted" in msg or "quota" in msg or "rate" in msg
             if not (is_rate and attempt < max_retries - 1):
                 raise
-            # Respeita o Retry-After do cabeçalho, se houver.
-            wait = delay
-            resp_obj = getattr(e, "response", None)
-            if resp_obj is not None:
-                try:
-                    wait = float(resp_obj.headers.get("retry-after")) or delay
-                except (TypeError, ValueError):
-                    pass
-            log.info("Groq 429 — aguardando %.1fs (tentativa %d/%d)", wait, attempt + 1, max_retries)
-            time.sleep(wait)
+            log.info("Gemini 429 — aguardando %.1fs (tentativa %d/%d)", delay, attempt + 1, max_retries)
+            time.sleep(delay)
             delay = min(delay * 2, 30)
-    raise last_err if last_err else RuntimeError("Groq: limite de tentativas excedido")
+    raise last_err if last_err else RuntimeError("Gemini: limite de tentativas excedido")
 
 
-def parse_tasks_with_groq(text: str) -> list[dict]:
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-    today  = datetime.now().strftime("%Y-%m-%d")
+def parse_tasks_with_ai(text: str) -> list[dict]:
+    today = datetime.now().strftime("%Y-%m-%d")
 
     chunk_size, overlap = 12000, 500
     chunks, start = [], 0
@@ -587,7 +584,7 @@ TRECHO:
 {chunk}"""
 
         try:
-            raw = _groq_complete(client, prompt)
+            raw = _gemini_complete(prompt)
             for t in json.loads(raw).get("tasks", []):
                 subj = t.get("subject", "Outros")
                 t["color"] = SUBJECT_COLORS.get(subj, "#555555")
@@ -621,29 +618,43 @@ CHAT_SYSTEM_PROMPT = (
 )
 
 
-def _groq_chat(messages: list[dict], max_retries: int = 4) -> str:
-    """Chat com a Groq, com retry/backoff em caso de 429 (rate limit)."""
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+def _gemini_chat(messages: list[dict], max_retries: int = 4) -> str:
+    """Chat com o Gemini, com retry/backoff em caso de 429 (quota)."""
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
+    # Gemini separa a instrução de sistema e usa o papel "model" no lugar de "assistant".
+    system_text, contents = None, []
+    for m in messages:
+        role, text = m.get("role"), m.get("content", "")
+        if role == "system":
+            system_text = text
+        else:
+            contents.append({
+                "role": "model" if role == "assistant" else "user",
+                "parts": [{"text": text}],
+            })
+
+    cfg = types.GenerateContentConfig(
+        temperature=0.5,
+        max_output_tokens=2000,
+        system_instruction=system_text,
+    )
+
     delay, last_err = 3.0, None
     for attempt in range(max_retries):
         try:
-            resp = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                temperature=0.5,
-                max_tokens=2000,
-            )
-            return resp.choices[0].message.content
+            resp = client.models.generate_content(model=GEMINI_MODEL, contents=contents, config=cfg)
+            return resp.text
         except Exception as e:
             last_err = e
-            status = getattr(e, "status_code", None)
-            is_rate = status == 429 or "429" in str(e) or "rate" in str(e).lower()
+            msg = str(e).lower()
+            is_rate = "429" in msg or "resource_exhausted" in msg or "quota" in msg or "rate" in msg
             if not (is_rate and attempt < max_retries - 1):
                 raise
-            log.info("Groq 429 (chat) — aguardando %.1fs (tentativa %d/%d)", delay, attempt + 1, max_retries)
+            log.info("Gemini 429 (chat) — aguardando %.1fs (tentativa %d/%d)", delay, attempt + 1, max_retries)
             time.sleep(delay)
             delay = min(delay * 2, 30)
-    raise last_err if last_err else RuntimeError("Groq: limite de tentativas excedido")
+    raise last_err if last_err else RuntimeError("Gemini: limite de tentativas excedido")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -658,8 +669,8 @@ def api_chat():
     hits.append(now)
     _CHAT_HITS[uid] = hits
 
-    if not os.environ.get("GROQ_API_KEY"):
-        return jsonify({"error": "GROQ_API_KEY não configurada."}), 500
+    if not os.environ.get("GEMINI_API_KEY"):
+        return jsonify({"error": "GEMINI_API_KEY não configurada."}), 500
 
     data = request.json or {}
     raw_msgs = data.get("messages")
@@ -680,7 +691,7 @@ def api_chat():
 
     messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}] + clean
     try:
-        reply = _groq_chat(messages)
+        reply = _gemini_chat(messages)
     except Exception as e:
         log.exception("Erro no chat com a IA: %s", e)
         return jsonify({"error": f"Erro ao falar com a IA: {str(e)}"}), 500
