@@ -67,6 +67,11 @@ _UPLOAD_HITS: dict[int, list[float]] = {}
 UPLOAD_LIMIT  = int(os.environ.get("UPLOAD_LIMIT", "12"))
 UPLOAD_WINDOW = int(os.environ.get("UPLOAD_WINDOW", "600"))  # segundos
 
+# Rate limit para o chat com a IA (também tem custo por chamada).
+_CHAT_HITS: dict[int, list[float]] = {}
+CHAT_LIMIT  = int(os.environ.get("CHAT_LIMIT", "40"))
+CHAT_WINDOW = int(os.environ.get("CHAT_WINDOW", "600"))  # segundos
+
 # ── Google OAuth ──────────────────────────────────────────────────────────────
 oauth = OAuth(app)
 google = oauth.register(
@@ -599,6 +604,87 @@ TRECHO:
 
     log.info("Parsing concluído: %d tarefas de %d pedaço(s)", len(all_tasks), len(chunks))
     return all_tasks
+
+
+# ── Chat com a IA (Groq) ──────────────────────────────────────────────────────
+
+CHAT_SYSTEM_PROMPT = (
+    "Você é o assistente de estudos do Orgeral, um app de agenda escolar. "
+    "Responda sempre em português do Brasil, de forma clara, amigável e objetiva. "
+    "Ajude o aluno a entender o conteúdo e a organizar os estudos.\n\n"
+    "Quando o aluno pedir ajuda com uma tarefa escolar específica:\n"
+    "1. Explique o conteúdo e oriente, passo a passo, como fazer a tarefa.\n"
+    "2. No FINAL da resposta, forneça um PROMPT PRONTO para o aluno copiar e colar "
+    "em qualquer IA para que ela realize a tarefa por ele. Coloque esse prompt "
+    "dentro de um bloco de código com três crases (```), sem nada além do prompt "
+    "dentro do bloco."
+)
+
+
+def _groq_chat(messages: list[dict], max_retries: int = 4) -> str:
+    """Chat com a Groq, com retry/backoff em caso de 429 (rate limit)."""
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    delay, last_err = 3.0, None
+    for attempt in range(max_retries):
+        try:
+            resp = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.5,
+                max_tokens=2000,
+            )
+            return resp.choices[0].message.content
+        except Exception as e:
+            last_err = e
+            status = getattr(e, "status_code", None)
+            is_rate = status == 429 or "429" in str(e) or "rate" in str(e).lower()
+            if not (is_rate and attempt < max_retries - 1):
+                raise
+            log.info("Groq 429 (chat) — aguardando %.1fs (tentativa %d/%d)", delay, attempt + 1, max_retries)
+            time.sleep(delay)
+            delay = min(delay * 2, 30)
+    raise last_err if last_err else RuntimeError("Groq: limite de tentativas excedido")
+
+
+@app.route("/api/chat", methods=["POST"])
+@login_required
+def api_chat():
+    # Rate limit por usuário.
+    uid = current_user_id()
+    now = time.time()
+    hits = [t for t in _CHAT_HITS.get(uid, []) if now - t < CHAT_WINDOW]
+    if len(hits) >= CHAT_LIMIT:
+        return jsonify({"error": "Muitas mensagens em pouco tempo. Aguarde alguns minutos."}), 429
+    hits.append(now)
+    _CHAT_HITS[uid] = hits
+
+    if not os.environ.get("GROQ_API_KEY"):
+        return jsonify({"error": "GROQ_API_KEY não configurada."}), 500
+
+    data = request.json or {}
+    raw_msgs = data.get("messages")
+    if not isinstance(raw_msgs, list) or not raw_msgs:
+        return jsonify({"error": "Mensagens inválidas"}), 400
+
+    # Sanitiza: mantém só role/content válidos, limita histórico e tamanho.
+    clean = []
+    for m in raw_msgs[-12:]:
+        if not isinstance(m, dict):
+            continue
+        role = m.get("role")
+        content = (m.get("content") or "").strip()
+        if role in ("user", "assistant") and content:
+            clean.append({"role": role, "content": content[:4000]})
+    if not clean:
+        return jsonify({"error": "Mensagens inválidas"}), 400
+
+    messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}] + clean
+    try:
+        reply = _groq_chat(messages)
+    except Exception as e:
+        log.exception("Erro no chat com a IA: %s", e)
+        return jsonify({"error": f"Erro ao falar com a IA: {str(e)}"}), 500
+    return jsonify({"reply": reply})
 
 
 # Garante o schema também sob gunicorn (sem bloco __main__).

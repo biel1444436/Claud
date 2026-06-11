@@ -4,16 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orgeral</title>
+  <script>
+    // Aplica o tema salvo antes de pintar a tela, p/ não piscar branco/escuro.
+    (function () {
+      try {
+        if (localStorage.getItem("orgeral-theme") === "light")
+          document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
+
+<!-- Botão flutuante p/ reabrir o menu quando recolhido -->
+<button id="btnReopen" class="floating-open hidden" title="Abrir menu">☰</button>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">
     <span class="logo-icon">◈</span>
     <span class="logo-text">Orgeral</span>
+    <button id="btnCollapse" class="collapse-btn" title="Recolher menu">⟨</button>
   </div>
 
   <!-- View toggle -->
@@ -119,6 +132,8 @@
           <input type="checkbox" id="selectAll" /> Selecionar tudo
         </label>
       </div>
+      <button id="btnChat" class="icon-btn" title="Chat com a IA">💬</button>
+      <button id="btnSettings" class="icon-btn" title="Configurações">⚙</button>
       <div class="user-info">
         {% if picture %}
         <img src="{{ picture }}" class="user-avatar" alt="{{ username }}" referrerpolicy="no-referrer" />
@@ -198,6 +213,37 @@
       </div>
     </form>
   </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Configurações</h2>
+      <button class="modal-close" id="settingsClose">✕</button>
+    </div>
+    <div class="settings-section">
+      <span class="settings-label">Tema</span>
+      <div class="theme-toggle">
+        <button class="theme-btn" data-theme-value="dark">🌙 Escuro</button>
+        <button class="theme-btn" data-theme-value="light">☀ Claro</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT PANEL -->
+<div id="chatPanel" class="chat-panel">
+  <div class="chat-header">
+    <span class="chat-title">💬 Assistente Orgeral</span>
+    <button class="modal-close" id="chatClose">✕</button>
+  </div>
+  <div id="chatMessages" class="chat-messages"></div>
+  <div id="taskPicker" class="task-picker hidden"></div>
+  <form id="chatForm" class="chat-input-row">
+    <textarea id="chatInput" class="chat-input" placeholder="Pergunte algo…  (digite / para suas tarefas)" rows="1"></textarea>
+    <button type="submit" class="chat-send" title="Enviar">➤</button>
+  </form>
 </div>
 
 <!-- LOADER -->

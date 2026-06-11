@@ -33,6 +33,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindListControls();
   bindBulkBar();
   bindCalendarSync();
+  bindSidebarCollapse();
+  bindSettings();
+  bindChat();
+  applyTheme(currentTheme());
 });
 
 /* ── View Toggle ───────────────────────────────────── */
@@ -532,6 +536,248 @@ function esc(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+/* ── Recolher Sidebar ───────────────────────────────── */
+function bindSidebarCollapse() {
+  const reopen = document.getElementById("btnReopen");
+
+  function setCollapsed(collapsed) {
+    document.body.classList.toggle("sidebar-collapsed", collapsed);
+    reopen.classList.toggle("hidden", !collapsed);
+    try { localStorage.setItem("orgeral-sidebar", collapsed ? "1" : "0"); } catch (e) {}
+    // FullCalendar precisa recalcular o tamanho após a animação.
+    setTimeout(() => { if (calendar) calendar.updateSize(); }, 300);
+  }
+
+  document.getElementById("btnCollapse").onclick = () => setCollapsed(true);
+  reopen.onclick = () => setCollapsed(false);
+
+  let start = false;
+  try { start = localStorage.getItem("orgeral-sidebar") === "1"; } catch (e) {}
+  setCollapsed(start);
+}
+
+/* ── Tema (escuro / claro) ──────────────────────────── */
+function currentTheme() {
+  try { return localStorage.getItem("orgeral-theme") === "light" ? "light" : "dark"; }
+  catch (e) { return "dark"; }
+}
+
+function applyTheme(theme) {
+  if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
+  else document.documentElement.removeAttribute("data-theme");
+  try { localStorage.setItem("orgeral-theme", theme); } catch (e) {}
+  document.querySelectorAll(".theme-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.themeValue === theme)
+  );
+  if (calendar) calendar.render();
+}
+
+function bindSettings() {
+  const modal = document.getElementById("settingsModal");
+  document.getElementById("btnSettings").onclick = () => {
+    applyTheme(currentTheme()); // garante o botão certo marcado
+    modal.classList.remove("hidden");
+  };
+  document.getElementById("settingsClose").onclick = () => modal.classList.add("hidden");
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.add("hidden"); };
+  document.querySelectorAll(".theme-btn").forEach((b) => {
+    b.onclick = () => applyTheme(b.dataset.themeValue);
+  });
+}
+
+/* ── Chat com a IA ──────────────────────────────────── */
+let chatHistory = []; // [{ role, content }]
+
+function bindChat() {
+  const panel = document.getElementById("chatPanel");
+  const input = document.getElementById("chatInput");
+  const form  = document.getElementById("chatForm");
+
+  document.getElementById("btnChat").onclick = () => {
+    panel.classList.toggle("open");
+    if (panel.classList.contains("open")) {
+      if (!chatHistory.length) renderChatHint();
+      input.focus();
+    }
+  };
+  document.getElementById("chatClose").onclick = () => panel.classList.remove("open");
+
+  // Cresce conforme o texto + detecta o comando "/".
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    const v = input.value;
+    if (v === "/") showTaskPicker();
+    else if (!v.startsWith("/")) hideTaskPicker();
+    else filterTaskPicker(v.slice(1));
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+    if (e.key === "Escape") hideTaskPicker();
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || text.startsWith("/")) return; // "/" é só p/ abrir o seletor
+    input.value = "";
+    input.style.height = "auto";
+    sendChat(text);
+  });
+}
+
+/* — Seletor de tarefas pendentes ("/") — */
+function pendingTasks() {
+  return tasks.filter((t) => !t.completed).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function showTaskPicker() { renderTaskPicker(pendingTasks()); }
+
+function filterTaskPicker(q) {
+  q = q.toLowerCase();
+  renderTaskPicker(pendingTasks().filter((t) =>
+    t.title.toLowerCase().includes(q) || (t.subject || "").toLowerCase().includes(q)
+  ));
+}
+
+function renderTaskPicker(list) {
+  const picker = document.getElementById("taskPicker");
+  picker.classList.remove("hidden");
+  if (!list.length) {
+    picker.innerHTML = '<div class="task-picker-empty">Nenhuma tarefa pendente.</div>';
+    return;
+  }
+  picker.innerHTML = '<div class="task-picker-header">Suas tarefas pendentes</div>';
+  list.slice(0, 8).forEach((t) => {
+    const el = document.createElement("div");
+    el.className = "task-picker-item";
+    el.innerHTML =
+      `<span class="list-dot" style="background:${t.color || "#555"}"></span>` +
+      `<span>${esc(t.title)} <span style="color:var(--text-muted)">· ${formatDate(t.date)}</span></span>`;
+    el.onclick = () => chooseTask(t);
+    picker.appendChild(el);
+  });
+}
+
+function hideTaskPicker() {
+  document.getElementById("taskPicker").classList.add("hidden");
+}
+
+function chooseTask(t) {
+  hideTaskPicker();
+  const input = document.getElementById("chatInput");
+  input.value = "";
+  input.style.height = "auto";
+  const meta = [t.subject, t.task_type].filter(Boolean).join(" · ");
+  const msg =
+    `Preciso de ajuda com esta tarefa:\n\n` +
+    `📌 ${t.title}` +
+    (meta ? `\n${meta}` : "") +
+    `\n📅 ${formatDate(t.date)}` +
+    (t.description ? `\n\n${t.description}` : "") +
+    `\n\nMe explique o conteúdo e como fazer, e no final me dê um prompt pronto ` +
+    `pra eu colar em outra IA pra ela fazer essa tarefa por mim.`;
+  sendChat(msg);
+}
+
+/* — Envio / renderização — */
+async function sendChat(text) {
+  const panel = document.getElementById("chatPanel");
+  if (!panel.classList.contains("open")) panel.classList.add("open");
+  clearChatHint();
+
+  chatHistory.push({ role: "user", content: text });
+  appendMessage("user", text);
+  const typing = appendTyping();
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: chatHistory }),
+    });
+    const data = await res.json();
+    typing.remove();
+    if (!res.ok) throw new Error(data.error || "Erro ao falar com a IA");
+    chatHistory.push({ role: "assistant", content: data.reply });
+    appendMessage("assistant", data.reply);
+  } catch (err) {
+    typing.remove();
+    appendMessage("assistant", "⚠ " + err.message);
+  }
+}
+
+function appendMessage(role, content) {
+  const box = document.getElementById("chatMessages");
+  const el = document.createElement("div");
+  el.className = "chat-msg " + role;
+  if (role === "assistant") {
+    el.innerHTML = renderAssistant(content);
+    bindCopyButtons(el);
+  } else {
+    el.textContent = content;
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function appendTyping() {
+  const box = document.getElementById("chatMessages");
+  const el = document.createElement("div");
+  el.className = "chat-msg assistant typing";
+  el.textContent = "digitando…";
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+// Renderiza a resposta separando blocos de código (```) p/ botão de copiar.
+function renderAssistant(text) {
+  const parts = String(text).split("```");
+  let html = "";
+  parts.forEach((p, i) => {
+    if (i % 2 === 1) {
+      const code = p.replace(/^[a-zA-Z]*\n/, "").trim();
+      html +=
+        `<div class="chat-code"><button class="chat-copy">copiar</button>` +
+        `<span class="chat-code-text">${esc(code)}</span></div>`;
+    } else if (p.trim()) {
+      html += `<span>${esc(p)}</span>`;
+    }
+  });
+  return html || esc(text);
+}
+
+function bindCopyButtons(el) {
+  el.querySelectorAll(".chat-copy").forEach((btn) => {
+    btn.onclick = () => {
+      const code = btn.parentElement.querySelector(".chat-code-text").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = "copiado!";
+        setTimeout(() => (btn.textContent = "copiar"), 1500);
+      });
+    };
+  });
+}
+
+function renderChatHint() {
+  const box = document.getElementById("chatMessages");
+  if (document.getElementById("chatHint")) return;
+  const el = document.createElement("div");
+  el.className = "chat-msg empty-hint";
+  el.id = "chatHint";
+  el.textContent =
+    'Olá! Pergunte o que quiser ou digite "/" para escolher uma tarefa pendente e pedir ajuda.';
+  box.appendChild(el);
+}
+
+function clearChatHint() {
+  const h = document.getElementById("chatHint");
+  if (h) h.remove();
 }
 
 /* ── Toast ──────────────────────────────────────────── */
