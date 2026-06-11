@@ -1,0 +1,17 @@
+# Segredos e dados locais — NUNCA versionar
+**/.secret_key
+**/.env
+*.db
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Sistema
+.DS_Store
+Thumbs.db
